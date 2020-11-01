@@ -19,7 +19,8 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
         goto fail_exit;
     }
 
-    for (int i = 0; i < sinoscope->width; i++) {
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < sinoscope->width; i++) { 
         #pragma omp parallel for simd schedule(static)
         for (int j = 0; j < sinoscope->height; j++) {
             float px    = sinoscope->dx * j - 2 * M_PI;
@@ -27,11 +28,10 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
             float value = 0;
 
             for (int k = 1; k <= sinoscope->taylor; k += 2) {
-                #pragma omp atomic
                 value += sin(px * k * sinoscope->phase1 + sinoscope->time) / k;
                 value += cos(py * k * sinoscope->phase0) / k;
             }
-
+            
             value = (atan(value) - atan(-value)) / M_PI;
             value = (value + 1) * 100;
 
