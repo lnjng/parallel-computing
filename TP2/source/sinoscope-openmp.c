@@ -19,9 +19,9 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
         goto fail_exit;
     }
 
-    #pragma omp parallel for schedule(static)
+    #pragma omp parallel for schedule(static) collapse(2)
     for (int i = 0; i < sinoscope->width; i++) { 
-        #pragma omp parallel for simd schedule(static)
+        //#pragma omp parallel for schedule(static)
         for (int j = 0; j < sinoscope->height; j++) {
             float px    = sinoscope->dx * j - 2 * M_PI;
             float py    = sinoscope->dy * i - 2 * M_PI;
@@ -40,10 +40,13 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
 
             int index = (i * 3) + (j * 3) * sinoscope->width;
 
+            #pragma omp atomic write
             sinoscope->buffer[index + 0] = pixel.bytes[0];
+            #pragma omp atomic write
             sinoscope->buffer[index + 1] = pixel.bytes[1];
+            #pragma omp atomic write
             sinoscope->buffer[index + 2] = pixel.bytes[2];
-                    
+
         }
 
     }
