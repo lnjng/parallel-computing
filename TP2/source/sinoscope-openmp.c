@@ -46,11 +46,12 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
             color_value(&pixel, value, sinoscope->interval, sinoscope->interval_inverse);
 
             int index = (i * 3) + (j * 3) * sinoscope->width;
-            #pragma omp critical
-            sinoscope->buffer[index + 0] = pixel.bytes[0];
-            sinoscope->buffer[index + 1] = pixel.bytes[1];
-            sinoscope->buffer[index + 2] = pixel.bytes[2];
-
+            #pragma omp critical (test)
+            {
+                sinoscope->buffer[index + 0] = pixel.bytes[0];
+                sinoscope->buffer[index + 1] = pixel.bytes[1];
+                sinoscope->buffer[index + 2] = pixel.bytes[2];
+            }
         }
 
     }
