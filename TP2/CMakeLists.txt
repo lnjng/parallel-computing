@@ -10,7 +10,7 @@ set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 
 include_directories(include)
 add_executable(sinoscope)
-target_link_libraries(sinoscope -lm -lpthread)
+target_link_libraries(sinoscope -lm -lpthread /usr/lib64/libOpenCL.so.1)
 target_sources(sinoscope PUBLIC
     source/color.c
     source/headless.c
@@ -23,13 +23,13 @@ target_sources(sinoscope PUBLIC
     source/viewer.c
 )
 
-include(FindOpenCL)
-if(OpenCL_FOUND)
-    target_link_libraries(sinoscope ${OpenCL_LIBRARY})
-    target_include_directories(sinoscope PUBLIC ${OpenCL_INCLUDE_DIR})
-else()
-    message(FATAL_ERROR "opencl is required for building the application")
-endif()
+#include(FindOpenCL)
+#if(OpenCL_FOUND)
+#    target_link_libraries(sinoscope ${OpenCL_LIBRARY})
+#    target_include_directories(sinoscope PUBLIC ${OpenCL_INCLUDE_DIR})
+#else()
+#   message(FATAL_ERROR "opencl is required for building the application")
+#endif()
 
 include(FindOpenMP)
 if(OpenMP_C_FOUND)
