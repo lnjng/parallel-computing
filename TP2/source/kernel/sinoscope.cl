@@ -6,14 +6,80 @@
  * Déclarez les structures partagées avec l'autre code si nécessaire selon votre énoncé.
  * Utilisez l'attribut `__attribute__((packed))` à vos déclarations.
  */
+struct __attribute__((packed)) params_int_t {
+    unsigned int buffer_size;
+    unsigned int width;
+    unsigned int height;
+    unsigned int taylor;
+    unsigned int interval;
+};
+struct __attribute__((packed)) params_float_t {
+    float interval_inverse;
+    float time;
+    float max;
+    float phase0;
+    float phase1;
+    float dx;
+    float dy;
+};
 
+struct pixel_t {
+    unsigned char bytes[3];
+};
+
+static const pixel_t pixel_white = {.bytes = {255, 255, 255}};
+static const pixel_t pixel_black = {.bytes = {0, 0, 0}};
+
+void color_value(pixel_t* pixel, float value, int interval, float interval_inverse) {
+    if (isnan(value)) {
+        pixel_value = pixel_black;
+        goto done;
+    }
+
+    int x = (((int)value % interval) * 255) * interval_inverse;
+    int i = value * interval_inverse;
+
+    switch (i) {
+    case 0:
+        pixel_value.bytes[0] = 0;
+        pixel_value.bytes[1] = x;
+        pixel_value.bytes[2] = 255;
+        break;
+    case 1:
+        pixel_value.bytes[0] = 0;
+        pixel_value.bytes[1] = 255;
+        pixel_value.bytes[2] = 255 - x;
+        break;
+    case 2:
+        pixel_value.bytes[0] = x;
+        pixel_value.bytes[1] = 255;
+        pixel_value.bytes[2] = 0;
+        break;
+    case 3:
+        pixel_value.bytes[0] = 255;
+        pixel_value.bytes[1] = 255 - x;
+        pixel_value.bytes[2] = 0;
+        break;
+    case 4:
+        pixel_value.bytes[0] = 255;
+        pixel_value.bytes[1] = 0;
+        pixel_value.bytes[2] = x;
+        break;
+    default:
+        pixel_value = pixel_white;
+        break;
+    }
+
+done:
+    *pixel = pixel_value;
+}
 /*
  * TODO
  *
  * Modifiez les paramètres du noyau avec ceux demandés par votre énoncé.
  */
 
-__kernel void sinoscope_kernel(__global unsigned char* buffer) {
+__kernel void sinoscope_kernel(__global unsigned char* buffer, struct params_int_t* sinoscope_ints, struct params_float_t* sinoscope_floats) {
     /*
      * TODO
      *
@@ -21,4 +87,31 @@ __kernel void sinoscope_kernel(__global unsigned char* buffer) {
      * noyau est appelé pour chaque coordonnée, alors vous ne devez pas spécifiez les boucles
      * extérieures.
      */
+
+    int i, j, index;
+	float val, px, py;
+	
+	i = get_global_id(0);
+	j = get_global_id(1);
+
+    float px    = sinoscope_floats->dx * j - 2 * M_PI;
+    float py    = sinoscope_floats->dy * i - 2 * M_PI;
+    float value = 0;
+
+    for (int k = 1; k <= sinoscope_ints->taylor; k += 2) {
+        value += sin(px * k * sinoscope_floats->phase1 + sinoscope_floats->time) / k;
+        value += cos(py * k * sinoscope_floats->phase0) / k;
+    }
+
+    value = (atan(value) - atan(-value)) / M_PI;
+    value = (value + 1) * 100;
+
+    pixel_t pixel;
+    color_value(&pixel, value, sinoscope_ints->interval, sinoscope_floats->interval_inverse);
+
+    int index = (i * 3) + (j * 3) * sinoscope_ints->width;
+
+    buffer[index + 0] = pixel.bytes[0];
+    buffer[index + 1] = pixel.bytes[1];
+    buffer[index + 2] = pixel.bytes[2];
 }
