@@ -97,12 +97,12 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
     
     free(options);
 
-    opencl->kernel = clCreateKernel(program, "sinoscope", &error);
+    opencl->kernel = clCreateKernel(program, "sinoscope_kernel", &error);
     if (error != CL_SUCCESS) {
         return -1;
     }
 
-    return -1;
+    return 0;
 }
 
 void sinoscope_opencl_cleanup(sinoscope_opencl_t* opencl) {
