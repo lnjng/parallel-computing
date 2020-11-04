@@ -69,7 +69,11 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
     }
 
     //char* options = "\"-I \" __OPENCL_INCLUDE__";
-    char* options = "\"-I \" __OPENCL_INCLUDE__";
+    char* options_prefix = "-I ";
+    char* opencl_include = __OPENCL_INCLUDE__;
+    char* options = malloc(strlen(options_prefix) + strlen(opencl_include) + 1);
+    strcpy(options, options_prefix);
+    strcat(options, opencl_include);
     error = clBuildProgram(program, 1, &opencl_device_id, options, NULL, NULL);
     if (error != CL_SUCCESS) {
         printf("%d", error);
@@ -89,7 +93,8 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
         }
         return -1;
     }
-        printf("boi pls");
+    
+    free(options);
 
     opencl->kernel = clCreateKernel(program, "sinoscope", &error);
     if (error != CL_SUCCESS) {
