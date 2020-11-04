@@ -22,37 +22,44 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
     int i;
     int j;
     int k;
-    pixel_t pixel;
     int index;
+    float px;
+    float py;
+    float value = 0.0;
+    pixel_t pixel;
    
     
-
-    #pragma omp parallel for schedule(static,10) private(i,j,k,pixel,index) collapse(2)
+    #pragma omp parallel for schedule(static) private(i,j,k,index,px,py,pixel) collapse(2) reduction(+: value) ordered
     for (i = 0; i < sinoscope->width; i++) { 
         for (j = 0; j < sinoscope->height; j++) {
-            float px    = sinoscope->dx * j - 2 * M_PI;
-            float py    = sinoscope->dy * i - 2 * M_PI;
-            float value = 0.0;
+            px    = sinoscope->dx * j - 2 * M_PI;
+            py    = sinoscope->dy * i - 2 * M_PI;
+
+            #pragma omp atomic write
+            value = 0.0;
             
-            #pragma omp simd reduction(+: value) 
             for (k = 1; k <= sinoscope->taylor; k += 2) {
                 value += sin(px * k * sinoscope->phase1 + sinoscope->time) / k;
                 value += cos(py * k * sinoscope->phase0) / k;
             }
 
-
+            #pragma omp atomic write
             value = (atan(value) - atan(-value)) / M_PI;
+            #pragma omp atomic write
             value = (value + 1) * 100;
-            
+               
             color_value(&pixel, value, sinoscope->interval, sinoscope->interval_inverse);
+            
+           
             index = (i * 3) + (j * 3) * sinoscope->width;
-
-            #pragma omp critical(section1)
+            
+            for (int indice = 0; indice < 3; indice++)
             {
-                sinoscope->buffer[index + 0] = pixel.bytes[0];
-                sinoscope->buffer[index + 1] = pixel.bytes[1];
-                sinoscope->buffer[index + 2] = pixel.bytes[2];
+                #pragma omp atomic write
+                sinoscope->buffer[index + indice] = pixel.bytes[indice];          
+                
             }
+            
             
         }
 
