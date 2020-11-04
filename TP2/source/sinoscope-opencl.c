@@ -68,7 +68,6 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
         return -1;
     }
 
-    //char* options = "\"-I \" __OPENCL_INCLUDE__";
     char* options_prefix = "-I ";
     char* opencl_include = __OPENCL_INCLUDE__;
     char* options = malloc(strlen(options_prefix) + strlen(opencl_include) + 1);
@@ -90,6 +89,8 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
 
             // Print the log
             printf("%s\n", log);
+
+            free(log);
         }
         return -1;
     }
