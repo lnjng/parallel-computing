@@ -106,10 +106,11 @@ void sinoscope_opencl_cleanup(sinoscope_opencl_t* opencl) {
      * Libérez les ressources associées à `opencl->context`, `opencl->queue`,
      * `opencl->buffer` et `opencl->kernel`.
      */
-
     clReleaseKernel(opencl->kernel);
     clReleaseCommandQueue(opencl->queue);
     clReleaseContext(opencl->context);
+    clReleaseMemObject(opencl->buffer);
+    
 }
 
 /*
