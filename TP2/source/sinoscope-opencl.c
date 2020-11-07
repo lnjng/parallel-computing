@@ -1,24 +1,6 @@
 #include "log.h"
 #include "sinoscope.h"
 
-
-struct __attribute__((packed)) params_int_t {
-    unsigned int buffer_size;
-    unsigned int width;
-    unsigned int height;
-    unsigned int taylor;
-    unsigned int interval;
-};
-struct __attribute__((packed)) params_float_t {
-    float interval_inverse;
-    float time;
-    float max;
-    float phase0;
-    float phase1;
-    float dx;
-    float dy;
-};
-
 int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device_id, unsigned int width,
                           unsigned int height) {
     /*
@@ -76,7 +58,7 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
     error = clBuildProgram(program, 1, &opencl_device_id, options, NULL, NULL);
     if (error != CL_SUCCESS) {
         printf("%d", error);
-        if (error == CL_BUILD_PROGRAM_FAILURE) {
+/*         if (error == CL_BUILD_PROGRAM_FAILURE) {
             // Determine the size of the log
             size_t log_size;
             clGetProgramBuildInfo(program, opencl_device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
@@ -91,7 +73,7 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
             printf("%s\n", log);
 
             free(log);
-        }
+        } */
         return -1;
     }
     
@@ -125,6 +107,27 @@ void sinoscope_opencl_cleanup(sinoscope_opencl_t* opencl) {
  * Déclarez les structures partagées avec le noyau OpenCL si nécessaire selon votre énoncé.
  * Utilisez l'attribut `__attribute__((packed))` à vos déclarations.
  */
+struct __attribute__((packed)) params_int_t {
+    //unsigned int buffer_size;
+    //unsigned int width;
+    //unsigned int height;
+    //unsigned int taylor;
+    //unsigned int interval;
+    cl_int buffer_size;
+    cl_int width;
+    cl_int height;
+    cl_int taylor;
+    cl_int interval;
+};
+struct __attribute__((packed)) params_float_t {
+    float interval_inverse;
+    float time;
+    float max;
+    float phase0;
+    float phase1;
+    float dx;
+    float dy;
+};
 
 int sinoscope_image_opencl(sinoscope_t* sinoscope) {
     if (sinoscope->opencl == NULL) {
