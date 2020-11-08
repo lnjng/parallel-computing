@@ -32,9 +32,11 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
     double* values = malloc(sizeof(double) * (sinoscope->buffer_size));
 
     
-    #pragma omp parallel for schedule(static) private(i,j,k,index,px,py,pixel,value) collapse(2)
-    for (i = 0; i < sinos.width; i++) { 
-        for (j = 0; j < sinos.height; j++) {
+    #pragma omp parallel for  \
+    schedule(static) private(i,j,k,index,px,py,pixel,value) collapse(2) \
+    default(none) shared(sinos, values) firstprivate(buffer) num_threads(64)
+    for (j = 0; j < sinos.height; j++) { 
+        for (i = 0; i < sinos.width; i++) {
             px    = sinos.dx * j - 2 * M_PI;
             py    = sinos.dy * i - 2 * M_PI;
             value = 0.0;
@@ -46,37 +48,38 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
 
             value = (atan(value) - atan(-value)) / M_PI;
             value = (value + 1) * 100;
-
+            
             color_value(&pixel, value, sinos.interval, sinos.interval_inverse);
             index = (i * 3) + (j * 3) * sinos.width;
             values[index] = value;
             
-
             /*buffer[index + 0] = pixel.bytes[0]; 
-            buffer[index + 1] = pixel.bytes[1]; 
+            buffer[index + 1] = pixel.bytes[1];
             buffer[index + 2] = pixel.bytes[2];*/
-            
         }
 
     }
 
-    //#pragma omp parallel for schedule(static) private(i,j,index) firstprivate(buffer) collapse(2) ordered
-    for (i = 0; i < sinos.width; i++)
+    #pragma omp parallel for schedule(static,sinos.buffer_size/16) private(i,j,index) \
+    firstprivate(buffer) shared(sinos, values) collapse(2) ordered num_threads(16)
+    for (j = 0; j < sinos.height; j++)
     {
-
-        for (j = 0;  j < sinos.height; j++)
+        for (i = 0;  i < sinos.width; i++)
         {
             index = (i * 3) + (j * 3) * sinos.width;
             pixel_t pixel;
             color_value(&pixel, values[index], sinos.interval, sinos.interval_inverse);
-            //#pragma omp ordered
-            //{
+            #pragma omp ordered
+            {
                 buffer[index + 0] = pixel.bytes[0]; 
                 buffer[index + 1] = pixel.bytes[1]; 
                 buffer[index + 2] = pixel.bytes[2];   
-            //}
+            }
         }
     }
+
+
+    /***************DO NO FORGET TO FREE THE MEMORY ***/
 
     return 0;
 
