@@ -29,12 +29,10 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
 
     sinoscope_t sinos = *sinoscope;
     unsigned char* buffer = sinos.buffer;
-    double* values = malloc(sizeof(double) * (sinoscope->buffer_size));
-
     
     #pragma omp parallel for  \
     schedule(static) private(i,j,k,index,px,py,pixel,value) collapse(2) \
-    default(none) shared(sinos, values) firstprivate(buffer)
+    default(none) shared(sinos,buffer)
     for (j = 0; j < sinos.height; j++) { 
         for (i = 0; i < sinos.width; i++) {
             px    = sinos.dx * j - 2 * M_PI;
@@ -51,7 +49,6 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
             
             color_value(&pixel, value, sinos.interval, sinos.interval_inverse);
             index = (i * 3) + (j * 3) * sinos.width;
-            values[index] = value;
             
             buffer[index + 0] = pixel.bytes[0]; 
             buffer[index + 1] = pixel.bytes[1];

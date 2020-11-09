@@ -19,12 +19,12 @@ float color_get_interval_inverse(float max) {
 }
 
 void color_value(pixel_t* pixel, float value, int interval, float interval_inverse) {
+    pixel_t pixel_value;
     if (isnan(value)) {
-        *pixel = pixel_black;
+        pixel_value = pixel_black;
         goto done;
     }
 
-    pixel_t pixel_value;
 
     int x = (((int)value % interval) * 255) * interval_inverse;
     int i = value * interval_inverse;
