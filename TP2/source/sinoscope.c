@@ -306,17 +306,17 @@ int sinoscope_benchmark(unsigned int width, unsigned int height, unsigned int ta
         LOG_ERROR("failed to benchmark (serial)");
         goto fail_exit;
     }
-    /*
-        if (benchmark(sinoscope_openmp, iterations) < 0) {
-            LOG_ERROR("failed to benchmark (openmp)");
-            goto fail_exit;
-        }
+/* 
+    if (benchmark(sinoscope_openmp, iterations) < 0) {
+        LOG_ERROR("failed to benchmark (openmp)");
+        goto fail_exit;
+    }
+  */
+    if (benchmark(sinoscope_opencl, iterations) < 0) {
+        LOG_ERROR("failed to benchmark (opencl)");
+        goto fail_exit;
+    }
 
-        if (benchmark(sinoscope_opencl, iterations) < 0) {
-            LOG_ERROR("failed to benchmark (opencl)");
-            goto fail_exit;
-        }
-    */
     printf("=========================================================================\n");
 
     sinoscope_destroy(sinoscope_serial);

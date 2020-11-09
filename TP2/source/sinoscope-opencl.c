@@ -108,18 +108,18 @@ void sinoscope_opencl_cleanup(sinoscope_opencl_t* opencl) {
  * Utilisez l'attribut `__attribute__((packed))` à vos déclarations.
  */
 struct __attribute__((packed)) params_int_t {
-    //unsigned int buffer_size;
-    //unsigned int width;
-    //unsigned int height;
-    //unsigned int taylor;
-    //unsigned int interval;
-    cl_int buffer_size;
-    cl_int width;
-    cl_int height;
-    cl_int taylor;
-    cl_int interval;
+    unsigned int buffer_size;
+    unsigned int width;
+    unsigned int height;
+    unsigned int taylor;
+    unsigned int interval;
+    //cl_int buffer_size;
+    //cl_int width;
+    //cl_int height;
+    //cl_int taylor;
+    //cl_int interval;
 };
-struct __attribute__((packed)) params_float_t {
+/* struct __attribute__((packed)) params_float_t {
     float interval_inverse;
     float time;
     float max;
@@ -128,7 +128,7 @@ struct __attribute__((packed)) params_float_t {
     float dx;
     float dy;
 };
-
+ */
 int sinoscope_image_opencl(sinoscope_t* sinoscope) {
     if (sinoscope->opencl == NULL) {
         LOG_ERROR_NULL_PTR();
@@ -158,18 +158,26 @@ int sinoscope_image_opencl(sinoscope_t* sinoscope) {
     params_int.taylor = sinoscope->taylor;
     params_int.interval = sinoscope->interval;
 
-    struct params_float_t params_float;
+/*     struct params_float_t params_float;
     params_float.interval_inverse = sinoscope->interval_inverse;
     params_float.time = sinoscope->time;
     params_float.max = sinoscope->max;
     params_float.phase0 = sinoscope->phase0;
     params_float.phase1 = sinoscope->phase1;
     params_float.dx = sinoscope->dx;
-    params_float.dy = sinoscope->dy;
+    params_float.dy = sinoscope->dy; */
 
     error = clSetKernelArg(sinoscope->opencl->kernel, 0, sizeof(cl_mem), &(sinoscope->opencl->buffer));
     error |= clSetKernelArg(sinoscope->opencl->kernel, 1, sizeof(struct params_int_t), &params_int);
-    error |= clSetKernelArg(sinoscope->opencl->kernel, 2, sizeof(struct params_float_t), &params_float);
+    //error |= clSetKernelArg(sinoscope->opencl->kernel, 2, sizeof(struct params_float_t), &params_float);
+    error |= clSetKernelArg(sinoscope->opencl->kernel, 2, sizeof(float), &(sinoscope->interval_inverse));
+    error |= clSetKernelArg(sinoscope->opencl->kernel, 3, sizeof(float), &(sinoscope->time));
+    error |= clSetKernelArg(sinoscope->opencl->kernel, 4, sizeof(float), &(sinoscope->max));
+    error |= clSetKernelArg(sinoscope->opencl->kernel, 5, sizeof(float), &(sinoscope->phase0));
+    error |= clSetKernelArg(sinoscope->opencl->kernel, 6, sizeof(float), &(sinoscope->phase1));
+    error |= clSetKernelArg(sinoscope->opencl->kernel, 7, sizeof(float), &(sinoscope->dx));
+    error |= clSetKernelArg(sinoscope->opencl->kernel, 8, sizeof(float), &(sinoscope->dy));
+
     if (error != CL_SUCCESS) {
         return -1;
     }
@@ -178,6 +186,7 @@ int sinoscope_image_opencl(sinoscope_t* sinoscope) {
      /* Démarrez le noyau OpenCL et attendez son exécution.
      */
     size_t global_size[] = {(size_t)sinoscope->width, (size_t)sinoscope->height};
+    //size_t global_size[] = {(size_t)sinoscope->height, (size_t)sinoscope->width};
     // TODO: verify this line below
     error = clEnqueueNDRangeKernel(sinoscope->opencl->queue, sinoscope->opencl->kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
     if (error != CL_SUCCESS) {
