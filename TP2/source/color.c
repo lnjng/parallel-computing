@@ -4,7 +4,7 @@
 
 #include "color.h"
 
-static volatile pixel_t pixel_value;
+//static volatile pixel_t pixel_value;
 
 unsigned int color_get_interval(float max) {
     if (max < 4.0f) {
@@ -20,9 +20,11 @@ float color_get_interval_inverse(float max) {
 
 void color_value(pixel_t* pixel, float value, int interval, float interval_inverse) {
     if (isnan(value)) {
-        pixel_value = pixel_black;
+        *pixel = pixel_black;
         goto done;
     }
+
+    pixel_t pixel_value;
 
     int x = (((int)value % interval) * 255) * interval_inverse;
     int i = value * interval_inverse;
