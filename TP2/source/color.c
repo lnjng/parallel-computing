@@ -19,9 +19,8 @@ float color_get_interval_inverse(float max) {
 }
 
 void color_value(pixel_t* pixel, float value, int interval, float interval_inverse) {
-    pixel_t pixel_value;
     if (isnan(value)) {
-        pixel_value = pixel_black;
+        *pixel = pixel_black;
         goto done;
     }
 
@@ -31,35 +30,35 @@ void color_value(pixel_t* pixel, float value, int interval, float interval_inver
 
     switch (i) {
     case 0:
-        pixel_value.bytes[0] = 0;
-        pixel_value.bytes[1] = x;
-        pixel_value.bytes[2] = 255;
+        pixel->bytes[0] = 0;
+        pixel->bytes[1] = x;
+        pixel->bytes[2] = 255;
         break;
     case 1:
-        pixel_value.bytes[0] = 0;
-        pixel_value.bytes[1] = 255;
-        pixel_value.bytes[2] = 255 - x;
+        pixel->bytes[0] = 0;
+        pixel->bytes[1] = 255;
+        pixel->bytes[2] = 255 - x;
         break;
     case 2:
-        pixel_value.bytes[0] = x;
-        pixel_value.bytes[1] = 255;
-        pixel_value.bytes[2] = 0;
+        pixel->bytes[0] = x;
+        pixel->bytes[1] = 255;
+        pixel->bytes[2] = 0;
         break;
     case 3:
-        pixel_value.bytes[0] = 255;
-        pixel_value.bytes[1] = 255 - x;
-        pixel_value.bytes[2] = 0;
+        pixel->bytes[0] = 255;
+        pixel->bytes[1] = 255 - x;
+        pixel->bytes[2] = 0;
         break;
     case 4:
-        pixel_value.bytes[0] = 255;
-        pixel_value.bytes[1] = 0;
-        pixel_value.bytes[2] = x;
+        pixel->bytes[0] = 255;
+        pixel->bytes[1] = 0;
+        pixel->bytes[2] = x;
         break;
     default:
-        pixel_value = pixel_white;
+        *pixel = pixel_white;
         break;
     }
 
 done:
-    *pixel = pixel_value;
+    return;
 }
