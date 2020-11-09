@@ -26,38 +26,33 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
     int i,j,k, index;
     float px, py,value = 0.0;
     pixel_t pixel;
-
-    sinoscope_t sinos = *sinoscope;
-    unsigned char* buffer = sinos.buffer;
     
     #pragma omp parallel for  \
     schedule(static) private(i,j,k,index,px,py,pixel,value) collapse(2) \
-    default(none) shared(sinos,buffer)
-    for (j = 0; j < sinos.height; j++) { 
-        for (i = 0; i < sinos.width; i++) {
-            px    = sinos.dx * j - 2 * M_PI;
-            py    = sinos.dy * i - 2 * M_PI;
+    default(none) shared(sinoscope)
+    for (j = 0; j < sinoscope->height; j++) { 
+        for (i = 0; i < sinoscope->width; i++) {
+            px    = sinoscope->dx * j - 2 * M_PI;
+            py    = sinoscope->dy * i - 2 * M_PI;
             value = 0.0;
             
-            for (k = 1; k <= sinos.taylor; k += 2) {
-                value += sin(px * k * sinos.phase1 + sinos.time) / k + cos(py * k * sinos.phase0) / k;
+            for (k = 1; k <= sinoscope->taylor; k += 2) {
+                value += sin(px * k * sinoscope->phase1 + sinoscope->time) / k + cos(py * k * sinoscope->phase0) / k;
             }
 
 
             value = (atan(value) - atan(-value)) / M_PI;
             value = (value + 1) * 100;
             
-            color_value(&pixel, value, sinos.interval, sinos.interval_inverse);
-            index = (i * 3) + (j * 3) * sinos.width;
+            color_value(&pixel, value, sinoscope->interval, sinoscope->interval_inverse);
+            index = (i * 3) + (j * 3) * sinoscope->width;
             
-            buffer[index + 0] = pixel.bytes[0]; 
-            buffer[index + 1] = pixel.bytes[1];
-            buffer[index + 2] = pixel.bytes[2];
+            sinoscope->buffer[index + 0] = pixel.bytes[0]; 
+            sinoscope->buffer[index + 1] = pixel.bytes[1];
+            sinoscope->buffer[index + 2] = pixel.bytes[2];
         }
 
     }
-
-    /***************DO NO FORGET TO FREE THE MEMORY ***/
 
     return 0;
 
