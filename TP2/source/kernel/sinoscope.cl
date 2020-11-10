@@ -13,22 +13,12 @@ struct __attribute__((packed)) params_int_t {
     unsigned int taylor;
     unsigned int interval;
 };
-struct __attribute__((packed)) params_float_t {
-    float interval_inverse;
-    float time;
-    float max;
-    float phase0;
-    float phase1;
-    float dx;
-    float dy;
-};
 /*
  * TODO
  *
  * Modifiez les paramètres du noyau avec ceux demandés par votre énoncé.
  */
 
-//__kernel void sinoscope_kernel(__global unsigned char* buffer, struct params_int_t sinoscope_ints, struct params_float_t sinoscope_floats) {
 __kernel void sinoscope_kernel(__global unsigned char* buffer, struct params_int_t sinoscope_ints, float interval_inverse, 
                                 float time, float max, float phase0, float phase1, float dx, float dy) 
 {

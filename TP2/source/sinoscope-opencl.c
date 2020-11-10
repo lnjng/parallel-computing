@@ -30,7 +30,6 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
 
     // Initialiser `opencl->queue` à partir du contexte précèdent.
     opencl->queue = clCreateCommandQueueWithProperties(opencl->context, opencl_device_id, 0, &error);
-    //opencl->queue = clCreateCommandQueue(opencl->context, opencl_device_id, 0, &error);
     if (error != CL_SUCCESS) {
         LOG_ERROR("failed to initialize OpenCL queue");
         return -1;
@@ -47,6 +46,7 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
     cl_program program = clCreateProgramWithSource(opencl->context, 1, (const char**)&buffer, &length, &error);
     free(buffer);
     if (error != CL_SUCCESS) {
+        LOG_ERROR("failed to create OpenCL program");
         return -1;
     }
 
@@ -57,23 +57,7 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
     strcat(options, opencl_include);
     error = clBuildProgram(program, 1, &opencl_device_id, options, NULL, NULL);
     if (error != CL_SUCCESS) {
-        printf("%d", error);
-/*         if (error == CL_BUILD_PROGRAM_FAILURE) {
-            // Determine the size of the log
-            size_t log_size;
-            clGetProgramBuildInfo(program, opencl_device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-
-            // Allocate memory for the log
-            char *log = (char *) malloc(log_size);
-
-            // Get the log
-            clGetProgramBuildInfo(program, opencl_device_id, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
-
-            // Print the log
-            printf("%s\n", log);
-
-            free(log);
-        } */
+        LOG_ERROR("failed to build OpenCL program");
         return -1;
     }
     
@@ -81,6 +65,7 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
 
     opencl->kernel = clCreateKernel(program, "sinoscope_kernel", &error);
     if (error != CL_SUCCESS) {
+        LOG_ERROR("failed to create OpenCL kernel");
         return -1;
     }
 
@@ -113,22 +98,8 @@ struct __attribute__((packed)) params_int_t {
     unsigned int height;
     unsigned int taylor;
     unsigned int interval;
-    //cl_int buffer_size;
-    //cl_int width;
-    //cl_int height;
-    //cl_int taylor;
-    //cl_int interval;
 };
-/* struct __attribute__((packed)) params_float_t {
-    float interval_inverse;
-    float time;
-    float max;
-    float phase0;
-    float phase1;
-    float dx;
-    float dy;
-};
- */
+
 int sinoscope_image_opencl(sinoscope_t* sinoscope) {
     if (sinoscope->opencl == NULL) {
         LOG_ERROR_NULL_PTR();
@@ -158,18 +129,8 @@ int sinoscope_image_opencl(sinoscope_t* sinoscope) {
     params_int.taylor = sinoscope->taylor;
     params_int.interval = sinoscope->interval;
 
-/*     struct params_float_t params_float;
-    params_float.interval_inverse = sinoscope->interval_inverse;
-    params_float.time = sinoscope->time;
-    params_float.max = sinoscope->max;
-    params_float.phase0 = sinoscope->phase0;
-    params_float.phase1 = sinoscope->phase1;
-    params_float.dx = sinoscope->dx;
-    params_float.dy = sinoscope->dy; */
-
     error = clSetKernelArg(sinoscope->opencl->kernel, 0, sizeof(cl_mem), &(sinoscope->opencl->buffer));
     error |= clSetKernelArg(sinoscope->opencl->kernel, 1, sizeof(struct params_int_t), &params_int);
-    //error |= clSetKernelArg(sinoscope->opencl->kernel, 2, sizeof(struct params_float_t), &params_float);
     error |= clSetKernelArg(sinoscope->opencl->kernel, 2, sizeof(float), &(sinoscope->interval_inverse));
     error |= clSetKernelArg(sinoscope->opencl->kernel, 3, sizeof(float), &(sinoscope->time));
     error |= clSetKernelArg(sinoscope->opencl->kernel, 4, sizeof(float), &(sinoscope->max));
@@ -179,6 +140,7 @@ int sinoscope_image_opencl(sinoscope_t* sinoscope) {
     error |= clSetKernelArg(sinoscope->opencl->kernel, 8, sizeof(float), &(sinoscope->dy));
 
     if (error != CL_SUCCESS) {
+        LOG_ERROR("failed to set OpenCL kernel arguments");
         return -1;
     }
 
@@ -187,20 +149,25 @@ int sinoscope_image_opencl(sinoscope_t* sinoscope) {
      */
     size_t global_size[] = {(size_t)sinoscope->width, (size_t)sinoscope->height};
     //size_t global_size[] = {(size_t)sinoscope->height, (size_t)sinoscope->width};
-    // TODO: verify this line below
     error = clEnqueueNDRangeKernel(sinoscope->opencl->queue, sinoscope->opencl->kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
     if (error != CL_SUCCESS) {
+        LOG_ERROR("failed to enqueue and execute OpenCL kernel");
         return -1;
     }
     
     // attente
     error = clFinish(sinoscope->opencl->queue);
+    if (error != CL_SUCCESS) {
+        LOG_ERROR("failed to wait for OpenCL kernel");
+        return -1;
+    }
 
      /* Effectuez la lecture du tampon `sinoscope->opencl->buffer` contenant le résultat dans
      * `sinoscope->buffer`.
      */
     error = clEnqueueReadBuffer(sinoscope->opencl->queue, sinoscope->opencl->buffer, CL_TRUE, 0, sinoscope->buffer_size, sinoscope->buffer, 0 , NULL, NULL);
     if (error != CL_SUCCESS) {
+        LOG_ERROR("failed to enqueue commands to read buffer");
         return -1;
     }
 
