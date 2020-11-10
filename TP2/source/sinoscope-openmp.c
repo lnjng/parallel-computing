@@ -30,14 +30,15 @@ int sinoscope_image_openmp(sinoscope_t* sinoscope) {
     #pragma omp parallel for  \
     schedule(static) private(i,j,k,index,px,py,pixel,value) collapse(2) \
     default(none) shared(sinoscope)
-    for (j = 0; j < sinoscope->height; j++) { 
-        for (i = 0; i < sinoscope->width; i++) {
+    for (i = 0; i < sinoscope->width; i++) { 
+        for (j = 0; j < sinoscope->height; j++) {
             px    = sinoscope->dx * j - 2 * M_PI;
             py    = sinoscope->dy * i - 2 * M_PI;
             value = 0.0;
             
             for (k = 1; k <= sinoscope->taylor; k += 2) {
-                value += sin(px * k * sinoscope->phase1 + sinoscope->time) / k + cos(py * k * sinoscope->phase0) / k;
+                value += sin(px * k * sinoscope->phase1 + sinoscope->time) / k;
+                value += cos(py * k * sinoscope->phase0) / k;
             }
 
 
