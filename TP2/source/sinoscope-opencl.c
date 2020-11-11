@@ -3,24 +3,8 @@
 
 int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device_id, unsigned int width,
                           unsigned int height) {
-    /*
-     * TODO
-     *
-     * Initialiser `opencl->context` du périphérique reçu en paramètre.
-     *
-     * Initialiser `opencl->queue` à partir du contexte précèdent.
-     *
-     * Initialiser `opencl->buffer` à partir du context précèdent (width * height * 3).
-     *
-     * Initialiser `opencl->kernel` à partir du contexte et du périphérique reçu en
-     * paramètre. Utilisez la fonction `opencl_load_kernel_code` déclaré dans `opencl.h` pour lire
-     * le code du noyau OpenCL `kernel/sinoscope.cl` dans un tampon. Compiler le noyau
-     * en ajoutant le paramètre `"-I " __OPENCL_INCLUDE__`.
-     */
 
     cl_int error = 0;
-
-    // Initialiser `opencl->context` du périphérique reçu en paramètre.
 
     opencl->context = clCreateContext(0, 1, &opencl_device_id, NULL, NULL, &error);
     if (error != CL_SUCCESS) {
@@ -28,18 +12,15 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
         return -1;
     }
 
-    // Initialiser `opencl->queue` à partir du contexte précèdent.
     opencl->queue = clCreateCommandQueueWithProperties(opencl->context, opencl_device_id, 0, &error);
     if (error != CL_SUCCESS) {
         LOG_ERROR("failed to initialize OpenCL queue");
         return -1;
     }
      
-    // Initialiser `opencl->buffer` à partir du context précèdent (width * height * 3).
     const unsigned int buffer_size = 3 * width * height;
     opencl->buffer = clCreateBuffer(opencl->context, CL_MEM_READ_WRITE, buffer_size, NULL, &error);
     
-    // Initialiser `opencl->kernel`
     char* buffer = NULL;
     size_t length = 0;
     opencl_load_kernel_code(&buffer, &length);
@@ -58,6 +39,7 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
     error = clBuildProgram(program, 1, &opencl_device_id, options, NULL, NULL);
     if (error != CL_SUCCESS) {
         LOG_ERROR("failed to build OpenCL program");
+        free(options);
         return -1;
     }
     
@@ -73,25 +55,12 @@ int sinoscope_opencl_init(sinoscope_opencl_t* opencl, cl_device_id opencl_device
 }
 
 void sinoscope_opencl_cleanup(sinoscope_opencl_t* opencl) {
-    /*
-     * TODO
-     *
-     * Libérez les ressources associées à `opencl->context`, `opencl->queue`,
-     * `opencl->buffer` et `opencl->kernel`.
-     */
     clReleaseKernel(opencl->kernel);
     clReleaseCommandQueue(opencl->queue);
     clReleaseContext(opencl->context);
     clReleaseMemObject(opencl->buffer);
-    
 }
 
-/*
- * TODO
- *
- * Déclarez les structures partagées avec le noyau OpenCL si nécessaire selon votre énoncé.
- * Utilisez l'attribut `__attribute__((packed))` à vos déclarations.
- */
 struct __attribute__((packed)) params_int_t {
     unsigned int buffer_size;
     unsigned int width;
@@ -105,23 +74,8 @@ int sinoscope_image_opencl(sinoscope_t* sinoscope) {
         LOG_ERROR_NULL_PTR();
         goto fail_exit;
     }
-
-    /*
-     * TODO
-     *
-     * Configurez les paramètres du noyau OpenCL afin d'envoyer `sinoscope->opencl->buffer` et les
-     * autres données nécessaire à son exécution.
-     *
-     * Démarrez le noyau OpenCL et attendez son exécution.
-     *
-     * Effectuez la lecture du tampon `sinoscope->opencl->buffer` contenant le résultat dans
-     * `sinoscope->buffer`.
-     */
     cl_int error = 0;
 
-    /* Configurez les paramètres du noyau OpenCL afin d'envoyer `sinoscope->opencl->buffer` et les
-     * autres données nécessaire à son exécution.
-     */
     struct params_int_t params_int;
     params_int.buffer_size = sinoscope->buffer_size;
     params_int.width = sinoscope->width;
@@ -144,27 +98,19 @@ int sinoscope_image_opencl(sinoscope_t* sinoscope) {
         return -1;
     }
 
-
-     /* Démarrez le noyau OpenCL et attendez son exécution.
-     */
-    size_t global_size[] = {(size_t)sinoscope->width, (size_t)sinoscope->height};
-    //size_t global_size[] = {(size_t)sinoscope->height, (size_t)sinoscope->width};
+    size_t global_size[] = {(size_t)sinoscope->height, (size_t)sinoscope->width};
     error = clEnqueueNDRangeKernel(sinoscope->opencl->queue, sinoscope->opencl->kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
     if (error != CL_SUCCESS) {
         LOG_ERROR("failed to enqueue and execute OpenCL kernel");
         return -1;
     }
     
-    // attente
     error = clFinish(sinoscope->opencl->queue);
     if (error != CL_SUCCESS) {
         LOG_ERROR("failed to wait for OpenCL kernel");
         return -1;
     }
 
-     /* Effectuez la lecture du tampon `sinoscope->opencl->buffer` contenant le résultat dans
-     * `sinoscope->buffer`.
-     */
     error = clEnqueueReadBuffer(sinoscope->opencl->queue, sinoscope->opencl->buffer, CL_TRUE, 0, sinoscope->buffer_size, sinoscope->buffer, 0 , NULL, NULL);
     if (error != CL_SUCCESS) {
         LOG_ERROR("failed to enqueue commands to read buffer");

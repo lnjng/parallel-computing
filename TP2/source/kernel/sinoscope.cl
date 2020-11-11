@@ -1,11 +1,5 @@
 #include "helpers.cl"
 
-/*
- * TODO
- *
- * Déclarez les structures partagées avec l'autre code si nécessaire selon votre énoncé.
- * Utilisez l'attribut `__attribute__((packed))` à vos déclarations.
- */
 struct __attribute__((packed)) params_int_t {
     unsigned int buffer_size;
     unsigned int width;
@@ -13,23 +7,10 @@ struct __attribute__((packed)) params_int_t {
     unsigned int taylor;
     unsigned int interval;
 };
-/*
- * TODO
- *
- * Modifiez les paramètres du noyau avec ceux demandés par votre énoncé.
- */
 
 __kernel void sinoscope_kernel(__global unsigned char* buffer, struct params_int_t sinoscope_ints, float interval_inverse, 
                                 float time, float max, float phase0, float phase1, float dx, float dy) 
 {
-    /*
-     * TODO
-     *
-     * En vous basant sur l'implémentation dans `sinoscope-serial.c`, effectuez le même calcul. Ce
-     * noyau est appelé pour chaque coordonnée, alors vous ne devez pas spécifiez les boucles
-     * extérieures.
-     */
-
     int i, j;
 	
 	i = get_global_id(0);
