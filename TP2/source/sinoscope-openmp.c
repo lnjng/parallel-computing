@@ -11,20 +11,13 @@
 
 
 int sinoscope_image_openmp(sinoscope_t* sinoscope) {
-    /*
-     * TODO
-     *
-     * En vous basant sur l'implémentation dans `sinoscope-serial.c`, effectuez le même calcul en
-     * utilisant les pragmas OpenMP selon votre énoncé.
-     */
-
     if (sinoscope == NULL) {
         LOG_ERROR_NULL_PTR();
         goto fail_exit;
     }
 
     int i,j,k, index;
-    float px, py,value = 0.0;
+    float px, py,value;
     pixel_t pixel;
     
     #pragma omp parallel for  \
