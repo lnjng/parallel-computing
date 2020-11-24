@@ -4,6 +4,15 @@
 #include "heatsim.h"
 #include "log.h"
 
+
+struct gridParams
+{
+    int width;
+    int height; 
+    int padding;
+}gridParams_t;
+
+
 int heatsim_init(heatsim_t* heatsim, unsigned int dim_x, unsigned int dim_y) {
     /*
      * TODO: Initialiser tous les membres de la structure `heatsim`.
@@ -43,6 +52,14 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
      *
      *       Utilisez `cart2d_get_grid` pour obtenir la `grid` à une coordonnée.
      */
+    MPI_Datatype gridParamsType;
+    MPI_Datatype gridParamsFieldTypes[3] = {MPI_INT, MPI_INT, MPI_INT};
+    int gridParamsFieldLength[3] = {1, 1, 1};
+    MPI_Aint gridParamsPositions[3] = {offsetof(gridParams_t, width), offsetof(gridParams_t, height), 
+                offsetof(gridParams_t, padding)};
+    
+    MPI_Type_create_struct(3, gridParamsFieldLength, gridParamsPositions, gridParamsFieldTypes, &gridParamsType);
+    MPI_Type_commit(&gridParamsType);
 
 fail_exit:
     return -1;
