@@ -10,6 +10,21 @@ int heatsim_init(heatsim_t* heatsim, unsigned int dim_x, unsigned int dim_y) {
      *       Le communicateur doit être périodique. Le communicateur
      *       cartésien est périodique en X et Y.
      */
+    int periodic[2];
+    periodic[0] = 1;
+    periodic[1] = 1;
+    int reorder = 0; 
+    heatsim->coordinates[0] = dim_x;
+    heatsim->coordinates[1] = dim_y;
+    MPI_Comm_size(MPI_COMM_WORLD, &heatsim->rank_count);
+    MPI_Comm_rank(MPI_COMM_WORLD, &heatsim->rank);
+    MPI_Create_Cart(MPI_COMM_WORLD, 2, heatsim->coordinates,periodic, reorder, &heatsim->communicator);
+    MPI_Comm_rank(heatsim->communicator, &heatsim->rank_north_peer);
+    MPI_Comm_rank(heatsim->communicator, &heatsim->rank_south_peer);
+    MPI_Comm_rank(heatsim->communicator, &heatsim->rank_east_peer);
+    MPI_Comm_rank(heatsim->communicator, &heatsim->rank_west_peer);
+
+
 
 fail_exit:
     return -1;
