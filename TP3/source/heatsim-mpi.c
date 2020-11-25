@@ -10,6 +10,25 @@ int heatsim_init(heatsim_t* heatsim, unsigned int dim_x, unsigned int dim_y) {
      *       Le communicateur doit être périodique. Le communicateur
      *       cartésien est périodique en X et Y.
      */
+    int err = MPI_SUCCESS;
+
+    err |= MPI_Comm_size(MPI_COMM_WORLD, &heatsim->rank_count);
+    err |= MPI_Comm_rank(MPI_COMM_WORLD, &heatsim->rank);
+
+	if (dim_x * dim_y != heatsim->rank_count) {
+		printf("Block size needs to be the same value as nb of rank count");
+		goto fail_exit;
+	}
+    err |= MPI_Cart_create(MPI_COMM_WORLD, 2, [dim_x, dim_y], [1, 1], false, &heatsim->communicator);
+    err |= MPI_Cart_shift(ctx->comm2d, 1, 1, &heatsim->rank_north_peer, &heatsim->rank_south_peer);
+    err |= MPI_Cart_shift(ctx->comm2d, 0, 1, &heatsim->rank_west_peer, &heatsim->rank_east_peer);
+    err |= MPI_Cart_coords(MPI_COMM_WORLD, heatsim->rank, 2, heatsim->coordinates);
+
+    if (err != MPI_SUCCESS){
+        goto fail_exit;
+    }
+
+    return 1;
 
 fail_exit:
     return -1;
@@ -28,6 +47,7 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
      *
      *       Utilisez `cart2d_get_grid` pour obtenir la `grid` à une coordonnée.
      */
+
 
 fail_exit:
     return -1;
