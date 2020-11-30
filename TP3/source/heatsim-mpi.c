@@ -167,7 +167,7 @@ grid_t* heatsim_receive_grid(heatsim_t* heatsim) {
     struct whp_params_t whp;
     err |= MPI_Irecv(&whp, 1, whp_params, 0, tag, heatsim->communicator, &reqwhp);
 
-    err |= MPI_Waitall(nb_requests, reqwhp, statwhp);
+    err |= MPI_Wait(&reqwhp, &statwhp);
 
     if (err != MPI_SUCCESS){
         prinf("Failed to receive width, height and/or padding");
