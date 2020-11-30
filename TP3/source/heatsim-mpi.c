@@ -174,7 +174,8 @@ grid_t* heatsim_receive_grid(heatsim_t* heatsim) {
         goto fail_exit;
     }
 
-    grid_t* grid = grid_create(width, height, padding);
+    struct whp_params_t whp;
+    grid_t* grid = grid_create(whp.width, whp.height, whp.padding);
 
     MPI_Request req;
     MPI_Status stat;
