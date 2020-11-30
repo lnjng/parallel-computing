@@ -67,7 +67,7 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
                         gridParamsLength,
                         grid_params_positions,
                         grid_params_type,
-                        mpi_grid_params_type);
+                        &mpi_grid_params_type);
         
         MPI_Type_commit(&mpi_grid_params_type);
 
@@ -76,8 +76,41 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
         params_to_send.height = cart->total_height;
         params_to_send.padding[0] = cart->x_offsets;
         params_to_send.padding[1] = cart->y_offsets;
+
+
+        // sending parameters
+        MPI_Isend(&params_to_send,1,mpi_grid_params_type,heatsim->rank_north_peer,heatsim->rank_north_peer,
+                heatsim->communicator);
         
+        MPI_Isend(&params_to_send,1,mpi_grid_params_type,heatsim->rank_south_peer,heatsim->rank_south_peer,
+                heatsim->communicator);
+
+        MPI_Isend(&params_to_send,1,mpi_grid_params_type,heatsim->rank_east_peer,heatsim->rank_east_peer,
+                heatsim->communicator);
+
+        MPI_Isend(&params_to_send,1,mpi_grid_params_type,heatsim->rank_west_peer,heatsim->rank_west_peer,
+                heatsim->communicator);
+
+        int north_peer_coords[2];
+        int south_peer_coords[2];
+        int east_peer_coords[2];
+        int west_peer_coords[2];
+
+        // coordonnates of neighbors
+        MPI_Cart_coords(heatsim->communicator,heatsim->rank_north_peer,2,north_peer_coords);
+        MPI_Cart_coords(heatsim->communicator,heatsim->rank_south_peer,2,south_peer_coords);
+        MPI_Cart_coords(heatsim->communicator,heatsim->rank_east_peer,2,east_peer_coords);
+        MPI_Cart_coords(heatsim->communicator,heatsim->rank_west_peer,2,west_peer_coords);
+
+        // grid to send 
+        grid_t* grid_north = cart2d_get_grid(cart, north_peer_coords[0], north_peer_coords[1]);
+        grid_t* grid_south = cart2d_get_grid(cart, rank_south_peer[0], rank_south_peer[1]);
+        grid_t* grid_east = cart2d_get_grid(cart, rank_east_peer[0], rank_east_peer[1]);
+        grid_t* grid_west = cart2d_get_grid(cart, rank_west_peer[0], rank_west_peer[1]);
+
+        //sending grids
         
+
         
     }
 
