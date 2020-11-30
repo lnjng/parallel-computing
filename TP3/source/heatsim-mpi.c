@@ -4,6 +4,15 @@
 #include "heatsim.h"
 #include "log.h"
 
+struct whp_params_t {
+    unsigned int width;
+    unsigned int height;
+    unsigned int padding;
+}
+struct data_params_t {
+    double* data;
+}
+
 int heatsim_init(heatsim_t* heatsim, unsigned int dim_x, unsigned int dim_y) {
     /*
      * TODO: Initialiser tous les membres de la structure `heatsim`.
@@ -49,7 +58,7 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
      *       Utilisez `cart2d_get_grid` pour obtenir la `grid` à une coordonnée.
      */
 
-    int nb_msg_send = 4;
+    int nb_msg_send = 2;
 
     int nb_requests = (rank_count-1)*nb_msg_send;
 
@@ -70,10 +79,38 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
         }
         grid_t* grid |= cart2d_get_grid(cart, coordinates[0], coordinates[1]);
 
-        err |= MPI_Isend(&grid->width, 1, MPI_INTEGER, i, tag, heatsim->communicator, &reqs[(i-1)]);
-        err |= MPI_Isend(&grid->height, 1, MPI_INTEGER, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send+1]);
-        err |= MPI_Isend(&grid->padding, 1, MPI_INTEGER, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send+2]);
-        err |= MPI_Isend(grid->data, grid->width_padded*grid->height_padded, MPI_DOUBLE, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send+3]);
+        // init les variables pour mpi_type_struct
+        MPI_Type_struct whp_params;
+        int nb_params = 3;
+        int blocklengths[nb_params];
+        MPI_int indices[nb_params];
+        MPI_Datatype old_types[nb_params];
+        // longueurs
+        blocklengths[0] = 1;
+        blocklengths[1] = 1;
+        blocklengths[2] = 1;
+        // types de base
+        old_types[0] = MPI_INTEGER;
+        old_types[1] = MPI_INTEGER;
+        old_types[2] = MPI_INTEGER;
+        // addresse de chaque param
+        MPI_Address( &grid->width, &indices[0]);
+        MPI_Address( &grid->height, &indices[1]);
+        MPI_Address( &grid->padding, &indices[2]);
+        // situation relative
+        indices[1] = indices[2] - indices[0];
+        indices[1] = indices[1] - indices[0];
+        indices[0] = 0;
+
+        MPI_Type_struct(nb_params, blocklengths, indices, old_types, &whp_params);
+
+        struct whp_params_t whp;
+        whp.width = grid->width;
+        whp.height = grid->height;
+        whp.padding = grid->padding;
+        err |= MPI_Isend(&whp, 1, whp_params, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send]);
+        // data en struct how????????????????????
+        err |= MPI_Isend(&grid->data, 1, MPI_DOUBLE, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send+1]);
 
         if (err != MPI_SUCCESS){
             prinf("Failed to send grid to other ranks");
@@ -98,19 +135,39 @@ grid_t* heatsim_receive_grid(heatsim_t* heatsim) {
      */
     int err = MPI_SUCCESS;
     int tag = 0;
-    int nb_requests = 3;
     
-    //better to have pointers?
-    MPI_Request reqs[nb_requests];
-    MPI_Status stats[nb_requests];
+    MPI_Request reqwhp;
+    MPI_Status statwhp;
 
-    int width, height, padding;
+    // init les variables pour mpi_type_struct
+    MPI_Type_struct whp_params;
+    int nb_params = 3;
+    int blocklengths[nb_params];
+    MPI_int indices[nb_params];
+    MPI_Datatype old_types[nb_params];
+    // longueurs
+    blocklengths[0] = 1;
+    blocklengths[1] = 1;
+    blocklengths[2] = 1;
+    // types de base
+    old_types[0] = MPI_INTEGER;
+    old_types[1] = MPI_INTEGER;
+    old_types[2] = MPI_INTEGER;
+    // addresse de chaque param
+    MPI_Address( &grid->width, &indices[0]);
+    MPI_Address( &grid->height, &indices[1]);
+    MPI_Address( &grid->padding, &indices[2]);
+    // situation relative
+    indices[1] = indices[2] - indices[0];
+    indices[1] = indices[1] - indices[0];
+    indices[0] = 0;
 
-    err |= MPI_Irecv(&width, 1, MPI_INTEGER, 0, tag, heatsim->communicator, &reqs[0]);
-    err |= MPI_Irecv(&height, 1, MPI_INTEGER, 0, tag, heatsim->communicator, &reqs[1]);
-    err |= MPI_Irecv(&padding, 1, MPI_INTEGER, 0, tag, heatsim->communicator, &reqs[2]);
+    MPI_Type_struct(nb_params, blocklengths, indices, old_types, &whp_params);
 
-    err |= MPI_Waitall(nb_requests, reqs, stats);
+    struct whp_params_t whp;
+    err |= MPI_Irecv(&whp, 1, whp_params, 0, tag, heatsim->communicator, &reqwhp);
+
+    err |= MPI_Waitall(nb_requests, reqwhp, statwhp);
 
     if (err != MPI_SUCCESS){
         prinf("Failed to receive width, height and/or padding");
@@ -179,6 +236,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
      *
      *       Utilisez `grid_get_cell` pour obtenir un pointeur vers une cellule.
      */
+
 
 fail_exit:
     return -1;
