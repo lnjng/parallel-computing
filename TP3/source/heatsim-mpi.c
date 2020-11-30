@@ -5,12 +5,12 @@
 #include "log.h"
 
 
-struct gridParams
+typedef struct grid_params
 {
     int width;
     int height; 
-    int padding;
-}gridParams_t;
+    int padding[2];
+}grid_params_t;
 
 
 int heatsim_init(heatsim_t* heatsim, unsigned int dim_x, unsigned int dim_y) {
@@ -51,15 +51,35 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
      *
      *       Utilisez `cart2d_get_grid` pour obtenir la `grid` à une coordonnée.
      */
-    MPI_Datatype gridParamsType;
-    MPI_Datatype gridParamsFieldTypes[3] = {MPI_INT, MPI_INT, MPI_INT};
-    int gridParamsFieldLength[3] = {1, 1, 1};
-    MPI_Aint gridParamsPositions[3] = {offsetof(gridParams_t, width), offsetof(gridParams_t, height), 
-                offsetof(gridParams_t, padding)};
-    
-    MPI_Type_create_struct(3, gridParamsFieldLength, gridParamsPositions, gridParamsFieldTypes, &gridParamsType);
-    MPI_Type_commit(&gridParamsType);
-    
+
+    if (heatsim->rank == 0)
+    {
+        const int nb_params = 3;
+        int gridParamsLength[nb_params] = {1,1,2};
+        MPI_Datatype grid_params_type[nb_params] = {MPI_INT,MPI_INT,MPI_INT};
+        MPI_Datatype mpi_grid_params_type;
+        MPI_Aint grid_params_positions[nb_params];
+        grid_params_postions[0] = offsetof(grid_params_t, width);
+        grid_params_postions[1] = offsetof(grid_params_t, height);
+        grid_params_postions[2] = offsetof(grid_params_t, padding);
+
+        MPI_Type_struct(nb_params,
+                        gridParamsLength,
+                        grid_params_positions,
+                        grid_params_type,
+                        mpi_grid_params_type);
+        
+        MPI_Type_commit(&mpi_grid_params_type);
+
+        grid_params_t params_to_send;
+        params_to_send.width = cart->total_width;
+        params_to_send.height = cart->total_height;
+        params_to_send.padding[0] = cart->x_offsets;
+        params_to_send.padding[1] = cart->y_offsets;
+        
+        
+        
+    }
 
 fail_exit:
     return -1;
