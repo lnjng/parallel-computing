@@ -121,6 +121,9 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
         MPI_Type_struct data_params;
         init_struct_whp(&whp_params);
         init_struct_data(&data_params, grid);
+        MPI_Type_commit(&whp_params);
+        MPI_Type_commit(&data_params);
+
 
         struct whp_params_t whp;
         whp.width = grid->width;
@@ -166,6 +169,7 @@ grid_t* heatsim_receive_grid(heatsim_t* heatsim) {
 
     MPI_Type_struct whp_params;
     init_struct_whp(&whp_params);
+    MPI_Type_commit(&whp_params);
 
     struct whp_params_t whp;
     err |= MPI_Irecv(&whp, 1, whp_params, 0, tag, heatsim->communicator, &reqwhp);
@@ -183,6 +187,7 @@ grid_t* heatsim_receive_grid(heatsim_t* heatsim) {
 
     MPI_Type_struct data_params;
     init_struct_data(&data_params, grid);
+    MPI_Type_commit(&data_params);
 
     MPI_Request req;
     MPI_Status stat;
