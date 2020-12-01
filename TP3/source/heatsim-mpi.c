@@ -111,8 +111,8 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
     int nb_requests = (rank_count-1)*nb_msg_send;
 
     //better to have pointers?
-    MPI_Request reqs[nb_msg_send];
-    MPI_Status stats[nb_msg_send];
+    MPI_Request reqs[nb_requests];
+    MPI_Status stats[nb_requests];
 
     int err = MPI_SUCCESS;
     for (int i = 1; i < rank_count; i++) {
