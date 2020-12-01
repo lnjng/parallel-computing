@@ -190,7 +190,14 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     MPI_Status status[nb_transaction];
 
     MPI_Datatype vec; 
-    MPI_Type_vector(grid->height, 1, grid->width_padded, MPI_DOUBLE, &vec);
+    int err = MPI_SUCCESS;
+
+    err = MPI_Type_vector(grid->height, 1, grid->width_padded, MPI_DOUBLE, &vec);
+    if (err != MPI_SUCCESS)
+    {
+        LOG_ERROR_MPI("Failed MPI_Type_vector", err);
+        return err;
+    }
 
     double* s_left_corner = grid_get_cell(grid, 0,0);
     double* s_bottom_left_corner = grid_get_cell(grid, grid->height-1,0);
@@ -202,43 +209,93 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
 
     // sending
     
-    MPI_Isend(s_left_corner,grid->width,MPI_DOUBLE,heatsim->rank_north_peer,heatsim->rank_north_peer,
+    err = MPI_Isend(s_left_corner,grid->width,MPI_DOUBLE,heatsim->rank_north_peer,heatsim->rank_north_peer,
                 heatsim->communicator, &req[0]);
-   
-    MPI_Isend(s_bottom_left_corner ,grid->width,MPI_DOUBLE,heatsim->rank_south_peer,heatsim->rank_south_peer,
-                heatsim->communicator, &req[1]);
-   
-    MPI_Isend(s_left_corner,1,vec,heatsim->rank_west_peer,heatsim->rank_west_peer,
-                heatsim->communicator, &req[2]);
 
-    MPI_Isend(s_right_corner,1,vec,heatsim->rank_east_peer,heatsim->rank_east_peer,
+    if (err != MPI_SUCCESS)
+    {
+        LOG_ERROR_MPI("Failed MPI_Isend with s_left_corner ", err);
+        return err;
+    }
+   
+    err = MPI_Isend(s_bottom_left_corner ,grid->width,MPI_DOUBLE,heatsim->rank_south_peer,heatsim->rank_south_peer,
+                heatsim->communicator, &req[1]);
+
+    if (err != MPI_SUCCESS)
+    {
+        LOG_ERROR_MPI("Failed MPI_Isend with s_bottom_left_corner ", err);
+        return err;
+    }
+   
+    err = MPI_Isend(s_left_corner,1,vec,heatsim->rank_west_peer,heatsim->rank_west_peer,
+                heatsim->communicator, &req[2]);
+    
+    if (err != MPI_SUCCESS)
+    {
+        LOG_ERROR_MPI("Failed MPI_Isend with s_left_corner ", err);
+        return err;
+    }
+
+    err = MPI_Isend(s_right_corner,1,vec,heatsim->rank_east_peer,heatsim->rank_east_peer,
                 heatsim->communicator, &req[3]);
+    
+    if (err != MPI_SUCCESS)
+    {
+        LOG_ERROR_MPI("Failed MPI_Isend with s_right_corner ", err);
+        return err;
+    }
 
      //receiving
 
-    MPI_Irecv(r_bottom_left_corner,grid->width,MPI_DOUBLE, heatsim->rank_south_peer,heatsim->rank_south_peer,
+    err = MPI_Irecv(r_bottom_left_corner,grid->width,MPI_DOUBLE, heatsim->rank_south_peer,heatsim->rank_south_peer,
          heatsim->communicator, &req[4]);
+    
+    if (err != MPI_SUCCESS)
+    {
+        LOG_ERROR_MPI("Failed MPI_Irecv with r_bottom_left_corner ", err);
+        return err;
+    }
 
-    MPI_Irecv(r_left_corner,grid->width,MPI_DOUBLE, heatsim->rank_north_peer,heatsim->rank_north_peer,
+    err = MPI_Irecv(r_left_corner,grid->width,MPI_DOUBLE, heatsim->rank_north_peer,heatsim->rank_north_peer,
          heatsim->communicator, &req[5]);
+    
+    if (err != MPI_SUCCESS)
+    {
+        LOG_ERROR_MPI("Failed MPI_Irecv with r_left_corner ", err);
+        return err;
+    }
 
-    MPI_Irecv(r_right_corner,1,vec,heatsim->rank_east_peer,heatsim->rank_east_peer,
+
+    err = MPI_Irecv(r_right_corner,1,vec,heatsim->rank_east_peer,heatsim->rank_east_peer,
                 heatsim->communicator, &req[6]);
 
-    MPI_Irecv(r_left_corner,1,vec,heatsim->rank_west_peer,heatsim->rank_west_peer,
+    if (err != MPI_SUCCESS)
+    {
+        LOG_ERROR_MPI("Failed MPI_Irecv with r_right_corner ", err);
+        return err;
+    }
+
+
+    err = MPI_Irecv(r_left_corner,1,vec,heatsim->rank_west_peer,heatsim->rank_west_peer,
                 heatsim->communicator, &req[7]);
+    
+    if (err != MPI_SUCCESS)
+    {
+        LOG_ERROR_MPI("Failed MPI_Irecv with r_left_corner ", err);
+        return err;
+    }
     
 
     // wait all the transaction
-    int ret = MPI_Waitall(nb_transaction,req,nb_transaction);
-    if (ret != MPI_SUCCESS)
+    err = MPI_Waitall(nb_transaction,req,nb_transaction);
+    if (err != MPI_SUCCESS)
     {
+        LOG_ERROR_MPI("Failed MPI_Waitall", err);
         goto fail_exit;
     }
 
 
 fail_exit:
-    printf("a problem with one the transactions occured \n");
     return -1;
 }
 
