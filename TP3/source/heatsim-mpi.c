@@ -192,36 +192,40 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     MPI_Datatype vec; 
     MPI_Type_vector(grid->height, 1, grid->width_padded, MPI_DOUBLE, &vec);
 
-    double* left_corner = grid_get_cell(grid, 0,0);
-    double* bottom_left_corner = grid_get_cell(grid, 0,grid->height-1);
-    double* right_corner = grid_get_cell(grid, 0,grid->height-1);
+    double* s_left_corner = grid_get_cell(grid, 0,0);
+    double* s_bottom_left_corner = grid_get_cell(grid, grid->height-1,0);
+    double* s_right_corner = grid_get_cell(grid, 0,grid->width-1);
+
+    double* r_left_corner = grid_get_cell_padded(grid, 0,1);
+    double* r_bottom_left_corner = grid_get_cell_padded(grid, grid->height,1);
+    double* r_right_corner = grid_get_cell_padded(grid, 1,grid->width);
 
     // sending
     
-    MPI_Isend(left_corner,grid->width,MPI_DOUBLE,heatsim->rank_north_peer,heatsim->rank_north_peer,
+    MPI_Isend(s_left_corner,grid->width,MPI_DOUBLE,heatsim->rank_north_peer,heatsim->rank_north_peer,
                 heatsim->communicator, &req[0]);
    
-    MPI_Isend(bottom_left_corner ,grid->width,MPI_DOUBLE,heatsim->rank_south_peer,heatsim->rank_south_peer,
+    MPI_Isend(s_bottom_left_corner ,grid->width,MPI_DOUBLE,heatsim->rank_south_peer,heatsim->rank_south_peer,
                 heatsim->communicator, &req[1]);
    
-    MPI_Isend(left_corner,1,vec,heatsim->rank_west_peer,heatsim->rank_west_peer,
+    MPI_Isend(s_left_corner,1,vec,heatsim->rank_west_peer,heatsim->rank_west_peer,
                 heatsim->communicator, &req[2]);
 
-    MPI_Isend(right_corner,1,vec,heatsim->rank_east_peer,heatsim->rank_east_peer,
+    MPI_Isend(s_right_corner,1,vec,heatsim->rank_east_peer,heatsim->rank_east_peer,
                 heatsim->communicator, &req[3]);
 
      //receiving
 
-    MPI_Irecv(bottom_left_corner,grid->width,MPI_DOUBLE, heatsim->rank_south_peer,heatsim->rank_south_peer,
+    MPI_Irecv(r_bottom_left_corner,grid->width,MPI_DOUBLE, heatsim->rank_south_peer,heatsim->rank_south_peer,
          heatsim->communicator, &req[4]);
 
-    MPI_Irecv(left_corner,grid->width,MPI_DOUBLE, heatsim->rank_north_peer,heatsim->rank_north_peer,
+    MPI_Irecv(r_left_corner,grid->width,MPI_DOUBLE, heatsim->rank_north_peer,heatsim->rank_north_peer,
          heatsim->communicator, &req[5]);
 
-    MPI_Irecv(right_corner,1,vec,heatsim->rank_east_peer,heatsim->rank_east_peer,
+    MPI_Irecv(r_right_corner,1,vec,heatsim->rank_east_peer,heatsim->rank_east_peer,
                 heatsim->communicator, &req[6]);
 
-    MPI_Irecv(left_corner,1,vec,heatsim->rank_west_peer,heatsim->rank_west_peer,
+    MPI_Irecv(r_left_corner,1,vec,heatsim->rank_west_peer,heatsim->rank_west_peer,
                 heatsim->communicator, &req[7]);
     
 
