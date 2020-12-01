@@ -398,7 +398,7 @@ int heatsim_receive_results(heatsim_t* heatsim, cart2d_t* cart) {
         MPI_Request req;
         MPI_Status stat;
 
-        err |= MPI_Recv(grid, 1, data_params, 0, tag, heatsim->communicator, &req);
+        err |= MPI_Recv(grid, 1, data_params, i, tag, heatsim->communicator, &req);
         if (err != MPI_SUCCESS){
             LOG_ERROR_MPI("heatsim_receive_results - Failed MPI_Recv", err);
             goto fail_exit;
