@@ -114,8 +114,9 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
     MPI_Request reqs[nb_requests*nb_msg_send];
     MPI_Status stats[nb_requests*nb_msg_send];
 
+    int err = MPI_SUCCESS;
     for (int i = 1; i < rank_count; i++) {
-        int err = MPI_SUCCESS;
+        err = MPI_SUCCESS;
         int tag = 0;
 
         int coordinates[2]; 
@@ -323,24 +324,29 @@ int heatsim_send_result(heatsim_t* heatsim, grid_t* grid) {
      * TODO: Envoyer les données (`data`) du `grid` résultant au rang 0. Le
      *       `grid` n'a aucun rembourage (padding = 0);
      */
+    int err = MPI_SUCCESS;
+
     MPI_Datatype data_params;
-    init_struct_data(&data_params, grid);
-    MPI_Type_commit(&data_params);
+    err = init_struct_data(&data_params, grid);
+    if (err != MPI_SUCCESS){
+        LOG_ERROR_MPI("heatsim_send_result - Failed init_struct_data", err);
+        goto fail_exit;
+    }
+    err = MPI_Type_commit(&data_params);
+    if (err != MPI_SUCCESS){
+        LOG_ERROR_MPI("heatsim_send_result - Failed MPI_Type_commit", err);
+        goto fail_exit;
+    }
 
     MPI_Request req;
     MPI_Status stat;
-    int len_dyn_array = grid->height_padded*grid->width_padded;
 
-    err |= MPI_Isend(grid, 1, data_params, 0, tag, heatsim->communicator, &req);
+    err |= MPI_Send(grid, 1, data_params, 0, tag, heatsim->communicator, &req);
     if (err != MPI_SUCCESS){
-        LOG_ERROR_MPI("heatsim_send_result - Failed MPI_Isend", err);
+        LOG_ERROR_MPI("heatsim_send_result - Failed MPI_Send", err);
         goto fail_exit;
     }
-    err |= MPI_Wait(&req, &stat);
-    if (err != MPI_SUCCESS){
-        LOG_ERROR_MPI("heatsim_send_result - Failed MPI_Wait", err);
-        goto fail_exit;
-    }
+
     err = MPI_Type_free(&data_params);
     if (err != MPI_SUCCESS){
         LOG_ERROR_MPI("heatsim_send_result - Failed MPI_Type_free", err);
@@ -359,8 +365,51 @@ int heatsim_receive_results(heatsim_t* heatsim, cart2d_t* cart) {
      *       Utilisez `cart2d_get_grid` pour obtenir la `grid` à une coordonnée
      *       qui va recevoir le contenue (`data`) d'un autre noeud.
      */
-
+    int err = MPI_SUCCESS;
     
+    for (int i = 1; i < heatsim->rank_count; i++) {
+        err = MPI_SUCCESS;
+        int tag = 0;
+
+        int coordinates[2]; 
+        err = MPI_Cart_coords(heatsim->communicator, i, 2, coordinates);
+
+        if (err != MPI_SUCCESS){
+            LOG_ERROR_MPI("heatsim_receive_results - Failed MPI_Cart_coords", err);
+            goto fail_exit;
+        }
+
+        grid_t* grid = cart2d_get_grid(cart, coordinates[0], coordinates[1]);
+        assert(grid->padding == 0);
+
+        MPI_Datatype data_params;
+        err = init_struct_data(&data_params, grid);
+        if (err != MPI_SUCCESS){
+            LOG_ERROR_MPI("heatsim_receive_results - Failed init_struct_data", err);
+            goto fail_exit;
+        }
+        err = MPI_Type_commit(&data_params);
+        if (err != MPI_SUCCESS){
+            LOG_ERROR_MPI("heatsim_receive_results - Failed MPI_Type_commit", err);
+            goto fail_exit;
+        }
+
+        MPI_Request req;
+        MPI_Status stat;
+
+        err |= MPI_Recv(grid, 1, data_params, 0, tag, heatsim->communicator, &req);
+        if (err != MPI_SUCCESS){
+            LOG_ERROR_MPI("heatsim_receive_results - Failed MPI_Recv", err);
+            goto fail_exit;
+        }
+
+        err = MPI_Type_free(&data_params);
+        if (err != MPI_SUCCESS){
+            LOG_ERROR_MPI("heatsim_send_result - Failed MPI_Type_free", err);
+            goto fail_exit;
+        }
+    }
+
 fail_exit:
     return -1;
 }
