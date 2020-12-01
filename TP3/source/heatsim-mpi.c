@@ -4,33 +4,20 @@
 #include "heatsim.h"
 #include "log.h"
 
-struct whp_params_t {
-    unsigned int width;
-    unsigned int height;
-    unsigned int padding;
-}
-struct data_params_t {
-    double data[];
-}
-
 void init_struct_whp(MPI_Datatype* whp_params){
-    // init les variables pour mpi_type_struct
     int nb_params = 3;
     int blocklengths[nb_params];
     MPI_int indices[nb_params];
     MPI_Datatype old_types[nb_params];
-    // longueurs
     blocklengths[0] = 1;
     blocklengths[1] = 1;
     blocklengths[2] = 1;
-    // types de base
     old_types[0] = MPI_INTEGER;
     old_types[1] = MPI_INTEGER;
     old_types[2] = MPI_INTEGER;
-    // situation relative
-    indices[0] = offsetof(whp_params_t, width);
-    indices[1] = offsetof(whp_params_t, height);
-    indices[2] = offsetof(whp_params_t, padding);
+    indices[0] = offsetof(grid_t, width);
+    indices[1] = offsetof(grid_t, height);
+    indices[2] = offsetof(grid_t, padding);
 
     MPI_Type_struct(nb_params, blocklengths, indices, old_types, &whp_params);
 }
@@ -46,7 +33,7 @@ void init_struct_data(MPI_Datatype* data_params, grid_t* grid) {
     MPI_Datatype old_types[nb_params];
     blocklengths[0] = 1;
     old_types[0] = dyn_array_type;
-    indices[0] = 0;
+    indices[0] = offsetof(grid_t, data);
     MPI_Type_struct(nb_params, blocklengths, indices, old_types, &data_params);
 }
 
@@ -124,18 +111,8 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
         MPI_Type_commit(&whp_params);
         MPI_Type_commit(&data_params);
 
-
-        struct whp_params_t whp;
-        whp.width = grid->width;
-        whp.height = grid->height;
-        whp.padding = grid->padding;
-        err |= MPI_Isend(&whp, 1, whp_params, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send]);
-        // create custom struct for data 
-        struct data_params_t* d = (data_params_t *)malloc(len_dyn_array*sizeof(double));
-        for (int i = 0; i < len_dyn_array; i++) {
-            d.data[i] = grid->data[i];
-        }
-        err |= MPI_Isend(d, 1, data_params, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send+1]);
+        err |= MPI_Isend(grid, 1, whp_params, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send]);
+        err |= MPI_Isend(grid, 1, data_params, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send+1]);
 
         if (err != MPI_SUCCESS){
             prinf("Failed to send grid to other ranks");
@@ -145,8 +122,8 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
 
     err = MPI_Waitall(nb_requests, reqs, stats);
 
-    MPI_TYPE_FREE(&whp_params);
-    MPI_TYPE_FREE(&data_params);
+    MPI_Type_free(&whp_params);
+    MPI_Type_free(&data_params);
 
 fail_exit:
     return -1;
@@ -171,19 +148,17 @@ grid_t* heatsim_receive_grid(heatsim_t* heatsim) {
     init_struct_whp(&whp_params);
     MPI_Type_commit(&whp_params);
 
-    struct whp_params_t whp;
-    err |= MPI_Irecv(&whp, 1, whp_params, 0, tag, heatsim->communicator, &reqwhp);
-
+    grid_t g;
+    err |= MPI_Irecv(&g, 1, whp_params, 0, tag, heatsim->communicator, &reqwhp);
     err |= MPI_Wait(&reqwhp, &statwhp);
 
     if (err != MPI_SUCCESS){
         prinf("Failed to receive width, height and/or padding");
         goto fail_exit;
     }
-    MPI_TYPE_FREE(&whp_params);
+    MPI_Type_free(&whp_params);
 
-    struct whp_params_t whp;
-    grid_t* grid = grid_create(whp.width, whp.height, whp.padding);
+    grid_t* grid = grid_create(g.width, g.height, g.padding);
 
     MPI_Datatype data_params;
     init_struct_data(&data_params, grid);
@@ -191,15 +166,13 @@ grid_t* heatsim_receive_grid(heatsim_t* heatsim) {
 
     MPI_Request req;
     MPI_Status stat;
-    int len_dyn_array = grid->height_padded*grid->width_padded;
-    struct data_params_t* d = (data_params_t *)malloc(len_dyn_array*sizeof(double));
-    err |= MPI_Irecv(d->data, 1, data_params, 0, tag, heatsim->communicator, &req);
+    err |= MPI_Irecv(grid, 1, data_params, 0, tag, heatsim->communicator, &req);
     err |= MPI_Wait(&req, &stat);
     if (err != MPI_SUCCESS){
         prinf("Failed to receive grid data");
         goto fail_exit;
     }
-    MPI_TYPE_FREE(&data_params);
+    MPI_Type_free(&data_params);
 
     return grid;
 
@@ -264,7 +237,21 @@ int heatsim_send_result(heatsim_t* heatsim, grid_t* grid) {
      * TODO: Envoyer les données (`data`) du `grid` résultant au rang 0. Le
      *       `grid` n'a aucun rembourage (padding = 0);
      */
+    MPI_Datatype data_params;
+    init_struct_data(&data_params, grid);
+    MPI_Type_commit(&data_params);
 
+    MPI_Request req;
+    MPI_Status stat;
+    int len_dyn_array = grid->height_padded*grid->width_padded;
+
+    err |= MPI_Isend(grid, 1, data_params, 0, tag, heatsim->communicator, &req);
+    err |= MPI_Wait(&req, &stat);
+    if (err != MPI_SUCCESS){
+        prinf("Failed to receive grid data");
+        goto fail_exit;
+    }
+    MPI_Type_free(&data_params);
 fail_exit:
     return -1;
 }
@@ -278,6 +265,7 @@ int heatsim_receive_results(heatsim_t* heatsim, cart2d_t* cart) {
      *       qui va recevoir le contenue (`data`) d'un autre noeud.
      */
 
+    
 fail_exit:
     return -1;
 }
