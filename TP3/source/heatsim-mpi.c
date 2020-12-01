@@ -339,10 +339,9 @@ int heatsim_send_result(heatsim_t* heatsim, grid_t* grid) {
         goto fail_exit;
     }
 
-    MPI_Request req;
     MPI_Status stat;
 
-    err |= MPI_Send(grid, 1, data_params, 0, tag, heatsim->communicator, &req);
+    err |= MPI_Send(grid, 1, data_params, 0, tag, heatsim->communicator, &stat);
     if (err != MPI_SUCCESS){
         LOG_ERROR_MPI("heatsim_send_result - Failed MPI_Send", err);
         goto fail_exit;
@@ -395,10 +394,9 @@ int heatsim_receive_results(heatsim_t* heatsim, cart2d_t* cart) {
             goto fail_exit;
         }
 
-        MPI_Request req;
         MPI_Status stat;
 
-        err |= MPI_Recv(grid, 1, data_params, i, tag, heatsim->communicator, &req);
+        err |= MPI_Recv(grid, 1, data_params, i, tag, heatsim->communicator, &stat);
         if (err != MPI_SUCCESS){
             LOG_ERROR_MPI("heatsim_receive_results - Failed MPI_Recv", err);
             goto fail_exit;
