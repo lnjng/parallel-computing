@@ -253,8 +253,6 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
      *       Utilisez `grid_get_cell` pour obtenir un pointeur vers une cellule.
      */
 
-    
-
 fail_exit:
     return -1;
 }
