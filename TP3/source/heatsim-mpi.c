@@ -325,6 +325,7 @@ int heatsim_send_result(heatsim_t* heatsim, grid_t* grid) {
      *       `grid` n'a aucun rembourage (padding = 0);
      */
     int err = MPI_SUCCESS;
+    int tag = 0;
 
     MPI_Datatype data_params;
     err = init_struct_data(&data_params, grid);
