@@ -109,8 +109,16 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
         grid_t* grid_west = cart2d_get_grid(cart, rank_west_peer[0], rank_west_peer[1]);
 
         //sending grids
-        
+        MPI_Type data_type;
+        MPI_Type_contiguous(grid->width_padded * grid->height_padded, MPI_DOUBLE, &data_type);
 
+        MPI_Type data_to_send;
+        int count[1] = {1};
+        MPI_Types type[1] = {data_type};
+        MPI_Aint displs[1] ={offsetof(grid_t, data)};
+
+        MPI_Type_struct(1, count, displs, type, &data_to_send)
+        MPI_Type_commit(&data_to_send);
         
     }
 
@@ -177,8 +185,56 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
      *
      *       Utilisez `grid_get_cell` pour obtenir un pointeur vers une cellule.
      */
+    int nb_transaction = 8;
+    MPI_Request req[nb_transaction];
+    MPI_Status status[nb_transaction];
+
+    MPI_Datatype vec; 
+    MPI_Type_vector(grid->height, 1, grid->width_padded, MPI_DOUBLE, &vec);
+
+    double* left_corner = grid_get_cell(grid, 0,0);
+    double* bottom_left_corner = grid_get_cell(grid, 0,grid->height-1);
+    double* right_corner = grid_get_cell(grid, 0,grid->height-1);
+
+    // sending
+    
+    MPI_Isend(left_corner,grid->width,MPI_DOUBLE,heatsim->rank_north_peer,heatsim->rank_north_peer,
+                heatsim->communicator, &req[0]);
+   
+    MPI_Isend(bottom_left_corner ,grid->width,MPI_DOUBLE,heatsim->rank_south_peer,heatsim->rank_south_peer,
+                heatsim->communicator, &req[1]);
+   
+    MPI_Isend(left_corner,1,vec,heatsim->rank_west_peer,heatsim->rank_west_peer,
+                heatsim->communicator, &req[2]);
+
+    MPI_Isend(right_corner,1,vec,heatsim->rank_east_peer,heatsim->rank_east_peer,
+                heatsim->communicator, &req[3]);
+
+     //receiving
+
+    MPI_Irecv(bottom_left_corner,grid->width,MPI_DOUBLE, heatsim->rank_south_peer,heatsim->rank_south_peer,
+         heatsim->communicator, &req[4]);
+
+    MPI_Irecv(left_corner,grid->width,MPI_DOUBLE, heatsim->rank_north_peer,heatsim->rank_north_peer,
+         heatsim->communicator, &req[5]);
+
+    MPI_Irecv(right_corner,1,vec,heatsim->rank_east_peer,heatsim->rank_east_peer,
+                heatsim->communicator, &req[6]);
+
+    MPI_Irecv(left_corner,1,vec,heatsim->rank_west_peer,heatsim->rank_west_peer,
+                heatsim->communicator, &req[7]);
+    
+
+    // wait all the transaction
+    int ret = MPI_Waitall(nb_transaction,req,nb_transaction);
+    if (ret != MPI_SUCCESS)
+    {
+        goto fail_exit;
+    }
+
 
 fail_exit:
+    printf("a problem with one the transactions occured \n");
     return -1;
 }
 
