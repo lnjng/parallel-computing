@@ -13,7 +13,7 @@ struct data_params_t {
     double data[];
 }
 
-void init_struct_grid(MPI_Type_struct* whp_params, MPI_Type_struct* data_params){
+void init_struct_whp(MPI_Type_struct* whp_params){
     // init les variables pour mpi_type_struct
     int nb_params = 3;
     int blocklengths[nb_params];
@@ -33,21 +33,19 @@ void init_struct_grid(MPI_Type_struct* whp_params, MPI_Type_struct* data_params)
     indices[2] = offsetof(whp_params_t, padding);
 
     MPI_Type_struct(nb_params, blocklengths, indices, old_types, &whp_params);
+}
 
-    // create mpi_contiguous first
+void init_struct_data(MPI_Type_struct* data_params, grid_t* grid) {
     int len_dyn_array = grid->width_padded*grid->height_padded;
     MPI_Datatype dyn_array_type;
     MPI_Type_contiguous(len_dyn_array, MPI_DOUBLE, &dyn_array_type);
-    // init les variables pour mpi_type_struct
+
     int nb_params = 1;
     int blocklengths[nb_params];
     MPI_int indices[nb_params];
     MPI_Datatype old_types[nb_params];
-    // longueurs
     blocklengths[0] = 1;
-    // types de base
     old_types[0] = dyn_array_type;
-    // addresse de chaque param
     indices[0] = 0;
     MPI_Type_struct(nb_params, blocklengths, indices, old_types, &data_params);
 }
@@ -117,58 +115,12 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
             prinf("Failed to get cart coords MPI");
             goto fail_exit;
         }
-        grid_t* grid |= cart2d_get_grid(cart, coordinates[0], coordinates[1]);
-
-/*
-        // init les variables pour mpi_type_struct
-        int nb_params = 3;
-        int blocklengths[nb_params];
-        MPI_int indices[nb_params];
-        MPI_Datatype old_types[nb_params];
-        // longueurs
-        blocklengths[0] = 1;
-        blocklengths[1] = 1;
-        blocklengths[2] = 1;
-        // types de base
-        old_types[0] = MPI_INTEGER;
-        old_types[1] = MPI_INTEGER;
-        old_types[2] = MPI_INTEGER;
-        // addresse de chaque param
-        MPI_Address(&grid->width, &indices[0]);
-        MPI_Address(&grid->height, &indices[1]);
-        MPI_Address(&grid->padding, &indices[2]);
-        // situation relative
-        indices[2] = indices[2] - indices[0];
-        indices[1] = indices[1] - indices[0];
-        indices[0] = 0;
-
-        MPI_Type_struct(nb_params, blocklengths, indices, old_types, &whp_params);
-        MPI_Type_commit(&whp_params);
-
-        // pour data
-        // create mpi_contiguous first
-        int len_dyn_array = grid->width_padded*grid->height_padded;
-        MPI_Datatype dyn_array_type;
-        MPI_Type_contiguous(len_dyn_array, MPI_DOUBLE, &dyn_array_type);
-        // init les variables pour mpi_type_struct
-        MPI_Type_struct data_params;
-        int nb_params = 1;
-        int blocklengths[nb_params];
-        MPI_int indices[nb_params];
-        MPI_Datatype old_types[nb_params];
-        // longueurs
-        blocklengths[0] = 1;
-        // types de base
-        old_types[0] = dyn_array_type;
-        // addresse de chaque param
-        indices[0] = 0;
-        MPI_Type_struct(nb_params, blocklengths, indices, old_types, &data_params);
-        MPI_Type_commit(&data_params);
-*/
+        grid_t* grid = cart2d_get_grid(cart, coordinates[0], coordinates[1]);
 
         MPI_Type_struct whp_params;
         MPI_Type_struct data_params;
-        init_struct_grid(&whp_params, &data_params);
+        init_struct_whp(&whp_params);
+        init_struct_data(&data_params, grid);
 
         struct whp_params_t whp;
         whp.width = grid->width;
@@ -212,53 +164,9 @@ grid_t* heatsim_receive_grid(heatsim_t* heatsim) {
     MPI_Request reqwhp;
     MPI_Status statwhp;
 
-/*
-    // init les variables pour mpi_type_struct
     MPI_Type_struct whp_params;
-    int nb_params = 3;
-    int blocklengths[nb_params];
-    MPI_int indices[nb_params];
-    MPI_Datatype old_types[nb_params];
-    // longueurs
-    blocklengths[0] = 1;
-    blocklengths[1] = 1;
-    blocklengths[2] = 1;
-    // types de base
-    old_types[0] = MPI_INTEGER;
-    old_types[1] = MPI_INTEGER;
-    old_types[2] = MPI_INTEGER;
-    // addresse de chaque param
-    MPI_Address( &grid->width, &indices[0]);
-    MPI_Address( &grid->height, &indices[1]);
-    MPI_Address( &grid->padding, &indices[2]);
-    // situation relative
-    indices[2] = indices[2] - indices[0];
-    indices[1] = indices[1] - indices[0];
-    indices[0] = 0;
-    MPI_Type_struct(nb_params, blocklengths, indices, old_types, &whp_params);
-    MPI_Type_commit(&whp_params);
+    init_struct_whp(&whp_params);
 
-    // Pour data
-    // create mpi_contiguous first
-    int len_dyn_array = grid->width_padded*grid->height_padded;
-    MPI_Datatype dyn_array_type;
-    MPI_Type_contiguous(len_dyn_array, MPI_DOUBLE, &dyn_array_type);
-    // init les variables pour mpi_type_struct
-    MPI_Type_struct data_params;
-    int nb_params = 1;
-    int blocklengths[nb_params];
-    MPI_int indices[nb_params];
-    MPI_Datatype old_types[nb_params];
-    blocklengths[0] = 1;
-    old_types[0] = dyn_array_type;
-    indices[0] = 0;
-    MPI_Type_struct(nb_params, blocklengths, indices, old_types, &data_params);
-    MPI_Type_commit(&data_params);
-    */
-
-    MPI_Type_struct whp_params;
-    MPI_Type_struct data_params;
-    init_struct_grid(&whp_params, &data_params);
     struct whp_params_t whp;
     err |= MPI_Irecv(&whp, 1, whp_params, 0, tag, heatsim->communicator, &reqwhp);
 
@@ -273,10 +181,9 @@ grid_t* heatsim_receive_grid(heatsim_t* heatsim) {
     struct whp_params_t whp;
     grid_t* grid = grid_create(whp.width, whp.height, whp.padding);
 
-    // create params_data la struct avec les infos donnees auparavant
+    MPI_Type_struct data_params;
+    init_struct_data(&data_params, grid);
 
-    // cree la struct MPI comme avant
-    // recevoir le data dans une var init en tant que data_params_t
     MPI_Request req;
     MPI_Status stat;
     int len_dyn_array = grid->height_padded*grid->width_padded;
