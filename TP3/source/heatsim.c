@@ -230,7 +230,7 @@ int heatsim_run(char* input, char* output, unsigned int dim_x, unsigned int dim_
         printf("[%d] receiving results from other ranks\n", heatsim.rank);
 
         if (heatsim.rank_count > 1) {
-            if (heatsim_receive_results(&heatsim, cart)) {
+            if (heatsim_receive_results(&heatsim, cart) < 0) {
                 LOG_ERROR("simulation failed to receive results (rank 0)");
                 goto fail_destroy_heat_grid;
             }
