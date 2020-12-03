@@ -344,7 +344,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     err = MPI_Type_vector(grid->height, 1, grid->width_padded, MPI_DOUBLE, &vec);
     if (err != MPI_SUCCESS)
     {
-        LOG_ERROR_MPI("Failed MPI_Type_vector", err);
+        LOG_ERROR_MPI("heatsim_exchange_borders - Failed MPI_Type_vector", err);
         return err;
     }
     MPI_Type_commit(&vec);
@@ -365,7 +365,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
 
     if (err != MPI_SUCCESS)
     {
-        LOG_ERROR_MPI("Failed MPI_Isend with s_left_corner ", err);
+        LOG_ERROR_MPI("heatsim_exchange_borders - Failed MPI_Isend with s_nord ", err);
         goto fail_exit;
     }
 
@@ -374,7 +374,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
 
     if (err != MPI_SUCCESS)
     {
-        LOG_ERROR_MPI("Failed MPI_Isend with s_bottom_left_corner ", err);
+        LOG_ERROR_MPI("heatsim_exchange_borders - Failed MPI_Isend with s_south ", err);
         goto fail_exit;
     }
    
@@ -382,7 +382,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     
     if (err != MPI_SUCCESS)
     {
-        LOG_ERROR_MPI("Failed MPI_Isend with s_left_corner ", err);
+        LOG_ERROR_MPI("heatsim_exchange_borders - Failed MPI_Isend with s_nord for west", err);
         goto fail_exit;
     }
 
@@ -391,7 +391,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     
     if (err != MPI_SUCCESS)
     {
-        LOG_ERROR_MPI("Failed MPI_Isend with s_right_corner ", err);
+        LOG_ERROR_MPI("heatsim_exchange_borders - Failed MPI_Isend with s_east ", err);
         goto fail_exit;
     }
 
@@ -401,7 +401,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     
     if (err != MPI_SUCCESS)
     {
-        LOG_ERROR_MPI("Failed MPI_Irecv with r_bottom_left_corner ", err);
+        LOG_ERROR_MPI("heatsim_exchange_borders - Failed MPI_Irecv with r_south ", err);
         goto fail_exit;
     }
 
@@ -409,7 +409,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     
     if (err != MPI_SUCCESS)
     {
-        LOG_ERROR_MPI("Failed MPI_Irecv with r_left_corner ", err);
+        LOG_ERROR_MPI("heatsim_exchange_borders - Failed MPI_Irecv with r_nord ", err);
         goto fail_exit;
     }
 
@@ -418,7 +418,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
 
     if (err != MPI_SUCCESS)
     {
-        LOG_ERROR_MPI("Failed MPI_Irecv with r_right_corner ", err);
+        LOG_ERROR_MPI("heatsim_exchange_borders - Failed MPI_Irecv with r_east ", err);
         goto fail_exit;
     }
 
@@ -427,7 +427,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     
     if (err != MPI_SUCCESS)
     {
-        LOG_ERROR_MPI("Failed MPI_Irecv with r_left_corner ", err);
+        LOG_ERROR_MPI("heatsim_exchange_borders - Failed MPI_Irecv with r_west", err);
         goto fail_exit;
     }
     
@@ -436,7 +436,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     err = MPI_Waitall(nb_transaction,req,status);
     if (err != MPI_SUCCESS)
     {
-        LOG_ERROR_MPI("Failed MPI_Waitall", err);
+        LOG_ERROR_MPI("heatsim_exchange_borders - Failed MPI_Waitall", err);
         goto fail_exit;
     }
     
