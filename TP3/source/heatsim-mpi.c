@@ -349,30 +349,21 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     }
     MPI_Type_commit(&vec);
 
-    /*double* s_nord = grid_get_cell(grid, 0,0);
+    double* s_nord = grid_get_cell(grid, 0,0);
     double* s_south = grid_get_cell(grid, 0, grid->height-1);
     double* s_east = grid_get_cell(grid,grid->width-1,0);
     double* s_west =  grid_get_cell(grid, 0,0);
 
     double* r_nord = grid_get_cell_padded(grid, 1,0);
-    double* r_south = grid_get_cell_padded(grid, 1,grid->height);
-    double* r_east = grid_get_cell_padded(grid, grid->width,1);
-    double* r_west = grid_get_cell_padded(grid, 0,1);*/
+    double* r_south = grid_get_cell_padded(grid, 1,grid->height_padded-1);
+    double* r_east = grid_get_cell_padded(grid, grid->width_padded-1,1);
+    double* r_west = grid_get_cell_padded(grid, 0,1);
 
-    /*
-        data        // nord 
-        data + width * (height - 1)    //sud 
-        data                 // est 
-        data + widht - 1   // ouest 
-    */
-   double*  data = grid->data;
-   int width = grid->width;
-   int height = grid->height;
 
 
     // sending
     
-    err = MPI_Isend(data,grid->width,MPI_DOUBLE,heatsim->rank_north_peer, 0,heatsim->communicator, &req[0]);
+    err = MPI_Isend(s_nord,grid->width,MPI_DOUBLE,heatsim->rank_north_peer, 0,heatsim->communicator, &req[0]);
 
     if (err != MPI_SUCCESS)
     {
@@ -381,7 +372,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     }
 
    
-    err = MPI_Isend(data + width * (height - 1) ,grid->width,MPI_DOUBLE,heatsim->rank_south_peer, 1,heatsim->communicator, &req[1]);
+    err = MPI_Isend(s_south,grid->width,MPI_DOUBLE,heatsim->rank_south_peer, 1,heatsim->communicator, &req[1]);
 
     if (err != MPI_SUCCESS)
     {
@@ -389,7 +380,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
         goto fail_exit;
     }
    
-    err = MPI_Isend(data,1,vec,heatsim->rank_west_peer, 2,heatsim->communicator, &req[2]);
+    err = MPI_Isend(s_west,1,vec,heatsim->rank_west_peer, 2,heatsim->communicator, &req[2]);
     
     if (err != MPI_SUCCESS)
     {
@@ -398,7 +389,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     }
 
 
-    err = MPI_Isend(data + width - 1, 1,vec,heatsim->rank_east_peer, 3,heatsim->communicator, &req[3]);
+    err = MPI_Isend(s_east, 1,vec,heatsim->rank_east_peer, 3,heatsim->communicator, &req[3]);
     
     if (err != MPI_SUCCESS)
     {
@@ -408,7 +399,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
 
      //receiving
 
-    err = MPI_Irecv(data + width * (height - 1),grid->width,MPI_DOUBLE, heatsim->rank_south_peer, 0,heatsim->communicator, &req[4]);
+    err = MPI_Irecv(r_south,grid->width,MPI_DOUBLE, heatsim->rank_south_peer, 0,heatsim->communicator, &req[4]);
     
     if (err != MPI_SUCCESS)
     {
@@ -416,7 +407,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
         goto fail_exit;
     }
 
-    err = MPI_Irecv(data,grid->width,MPI_DOUBLE, heatsim->rank_north_peer, 1,heatsim->communicator, &req[5]);
+    err = MPI_Irecv(r_south,grid->width,MPI_DOUBLE, heatsim->rank_north_peer, 1,heatsim->communicator, &req[5]);
     
     if (err != MPI_SUCCESS)
     {
@@ -425,7 +416,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     }
 
 
-    err = MPI_Irecv(data + width - 1,1,vec,heatsim->rank_east_peer, 2,heatsim->communicator, &req[6]);
+    err = MPI_Irecv(r_east,1,vec,heatsim->rank_east_peer, 2,heatsim->communicator, &req[6]);
 
     if (err != MPI_SUCCESS)
     {
@@ -434,7 +425,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     }
 
 
-    err = MPI_Irecv(data,1,vec,heatsim->rank_west_peer, 3,heatsim->communicator, &req[7]);
+    err = MPI_Irecv(r_west,1,vec,heatsim->rank_west_peer, 3,heatsim->communicator, &req[7]);
     
     if (err != MPI_SUCCESS)
     {
