@@ -352,6 +352,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     double* s_nord = grid_get_cell(grid, 0,0);
     double* s_south = grid_get_cell(grid, 0, grid->height-1);
     double* s_east = grid_get_cell(grid,grid->width-1,0);
+    double* s_west =  grid_get_cell(grid, 0,0);
 
     double* r_nord = grid_get_cell_padded(grid, 1,0);
     double* r_south = grid_get_cell_padded(grid, 1,grid->height);
@@ -378,7 +379,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
         goto fail_exit;
     }
    
-    err = MPI_Isend(s_nord,1,vec,heatsim->rank_west_peer,2,heatsim->communicator, &req[2]);
+    err = MPI_Isend(s_west,1,vec,heatsim->rank_west_peer,2,heatsim->communicator, &req[2]);
     
     if (err != MPI_SUCCESS)
     {
@@ -440,7 +441,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
         goto fail_exit;
     }
     
-    return 1;
+    return 0;
 
 
 fail_exit:
