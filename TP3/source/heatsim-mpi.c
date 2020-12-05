@@ -407,7 +407,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
         goto fail_exit;
     }
 
-    err = MPI_Irecv(r_south,grid->width,MPI_DOUBLE, heatsim->rank_north_peer, 1,heatsim->communicator, &req[5]);
+    err = MPI_Irecv(r_nord,grid->width,MPI_DOUBLE, heatsim->rank_north_peer, 1,heatsim->communicator, &req[5]);
     
     if (err != MPI_SUCCESS)
     {
