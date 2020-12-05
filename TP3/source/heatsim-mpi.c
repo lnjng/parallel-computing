@@ -307,17 +307,17 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
      *
      *       où `x` est le rembourrage (padding = 1). Ce rang devrait envoyer
      *
-     *        - la bordure [A B C D] au rang nord, 0
-     *        - la bordure [M N O P] au rang sud,   1 
-     *        - la bordure [A E I M] au rang ouest et  2
-     *        - la bordure [D H L P] au rang est.  3
+     *        - la bordure [A B C D] au rang nord,
+     *        - la bordure [M N O P] au rang sud,
+     *        - la bordure [A E I M] au rang ouest et
+     *        - la bordure [D H L P] au rang est.
      *
      *       Ce rang devrait aussi recevoir dans son rembourrage
      *
-     *        - la bordure [A B C D] du rang sud, 1
-     *        - la bordure [M N O P] du rang nord, 0
-     *        - la bordure [A E I M] du rang est et 2
-     *        - la bordure [D H L P] du rang ouest. 3
+     *        - la bordure [A B C D] du rang sud,
+     *        - la bordure [M N O P] du rang nord,
+     *        - la bordure [A E I M] du rang est et
+     *        - la bordure [D H L P] du rang ouest.
      *
      *       Après l'échange, le `grid` devrait avoir ces données dans son
      *       rembourrage provenant des voisins:
@@ -354,12 +354,10 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     double* s_east = grid_get_cell(grid,grid->width-1,0);
     double* s_west =  grid_get_cell(grid, 0,0);
 
-    double* r_nord = grid_get_cell_padded(grid, 1,0);
-    double* r_south = grid_get_cell_padded(grid, 1,grid->height_padded-1);
-    double* r_east = grid_get_cell_padded(grid, grid->width_padded-1,1);
-    double* r_west = grid_get_cell_padded(grid, 0,1);
-
-
+    double* r_nord = grid_get_cell_padded(grid, 1, 0);
+    double* r_south = grid_get_cell_padded(grid, 1, grid->height_padded-1);
+    double* r_east = grid_get_cell_padded(grid, grid->width_padded-1, 1);
+    double* r_west = grid_get_cell_padded(grid, 0, 1);
 
     // sending
     
@@ -372,7 +370,7 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     }
 
    
-    err = MPI_Isend(s_south,grid->width,MPI_DOUBLE,heatsim->rank_south_peer, 1,heatsim->communicator, &req[1]);
+    err = MPI_Isend(s_south ,grid->width,MPI_DOUBLE,heatsim->rank_south_peer, 1,heatsim->communicator, &req[1]);
 
     if (err != MPI_SUCCESS)
     {
