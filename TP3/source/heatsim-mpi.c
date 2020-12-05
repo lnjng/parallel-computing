@@ -354,15 +354,10 @@ int heatsim_exchange_borders(heatsim_t* heatsim, grid_t* grid) {
     double* s_east = grid_get_cell(grid,grid->width-1,0);
     double* s_west =  grid_get_cell(grid, 0,0);
 
-    double* r_nord = grid_get_cell_padded(grid, 1,0);
-    double* r_south = grid_get_cell_padded(grid, 1,grid->height_padded-1);
-    double* r_east = grid_get_cell_padded(grid, grid->width_padded-1,1);
-    double* r_west = grid_get_cell_padded(grid, 0,1);
-
-/*     double* r_nord = grid_get_cell(grid, 0,-1);
-    double* r_south = grid_get_cell(grid, 0,grid->height_padded_);
-    double* r_east = grid_get_cell(grid, grid->width_padded-1,1);
-    double* r_west = grid_get_cell(grid, -1, 1); */
+    double* r_nord = grid_get_cell_padded(grid, 1, 0);
+    double* r_south = grid_get_cell_padded(grid, 1, grid->height_padded-1);
+    double* r_east = grid_get_cell_padded(grid, grid->width_padded-1, 1);
+    double* r_west = grid_get_cell_padded(grid, 0, 1);
 
     // sending
     
