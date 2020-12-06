@@ -89,7 +89,7 @@ int heatsim_init(heatsim_t* heatsim, unsigned int dim_x, unsigned int dim_y) {
         goto fail_exit;
     }
 
-    return 1;
+    return 0;
 
 fail_exit:
     return -1;
@@ -116,19 +116,11 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
     //better to have pointers?
     MPI_Request reqs[nb_requests];
     MPI_Status stats[nb_requests];
-/*     MPI_Request reqswhp[nb_msg_send];
-    MPI_Status statswhp[nb_msg_send];
-    MPI_Request reqsd[nb_msg_send];
-    MPI_Status statsd[nb_msg_send];
- */
+
     int err = MPI_SUCCESS;
     for (int i = 1; i < heatsim->rank_count; i++) {
         err = MPI_SUCCESS;
         int tag = 0;
-/*         MPI_Request reqswhp;
-        MPI_Status statswhp;
-        MPI_Request reqsd;
-        MPI_Status statsd; */
 
         int coordinates[2]; 
         err = MPI_Cart_coords(heatsim->communicator, i, 2, coordinates);
@@ -163,14 +155,12 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
         }
 
         err = MPI_Isend(grid, 1, whp_params, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send]);
-        //err = MPI_Isend(grid, 1, whp_params, i, tag, heatsim->communicator, &reqswhp);
         if (err != MPI_SUCCESS){
             LOG_ERROR_MPI("heatsim_send_grids - Failed MPI_Isend (data_params)", err);
             goto fail_exit;
         }
 
         err = MPI_Isend(grid->data, 1, data_params, i, tag, heatsim->communicator, &reqs[(i-1)*nb_msg_send+1]);
-        //err = MPI_Isend(grid, 1, data_params, i, tag, heatsim->communicator, &reqsd);
         if (err != MPI_SUCCESS){
             LOG_ERROR_MPI("heatsim_send_grids - Failed MPI_Isend (data_params)", err);
             goto fail_exit;
@@ -193,7 +183,7 @@ int heatsim_send_grids(heatsim_t* heatsim, cart2d_t* cart) {
         goto fail_exit;
     }
     
-    return 1;
+    return 0;
   
 
 fail_exit:

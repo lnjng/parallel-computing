@@ -97,7 +97,7 @@ function save_data() {
     local temp_file
     temp_file=$(mktemp)
 
-    printf "%s\t%s\t%d\t%d\t%d\t%d\t%s\t%4.3f\n" "${job_id}" "${node_count}" "${cpu_count}" \
+    LANG=C printf "%s\t%s\t%d\t%d\t%d\t%d\t%s\t%4.3f\n" "${job_id}" "${node_count}" "${cpu_count}" \
         "${dim_x}" "${dim_y}" "${iterations}" "$(basename "${image}")" "${average_time}" > "${temp_file}"
     flock -w 10 "${results}" -c "cat ${temp_file} >> ${results}"
 
